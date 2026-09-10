@@ -1,0 +1,50 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v2
+      with:
+        version: "latest"
+        enable-cache: true
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install Dependencies
+      run: uv sync --frozen
+
+    - name: Run Ruff Linter
+      run: uv run ruff check .
+      continue-on-error: true # Not installed strictly in project yet
+
+    - name: Run Pytest
+      run: uv run pytest
+
+  docker-build:
+    name: Verify Docker Build
+    runs-on: ubuntu-latest
+    needs: test-backend
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Docker Image
+      working-directory: ./backend
+      run: docker build -t scheme-setu-backend:test .

@@ -84,6 +84,7 @@ Detailed phase deliverables, migration decisions, and architectural records can 
 - [Audit Trail & Hashing](docs/AUDIT.md)
 - [Data Flow Diagram](docs/DATA_FLOW.md)
 - [Threat Model](docs/THREAT_MODEL.md)
+- [Deployment & Production Guide](docs/DEPLOYMENT.md)
 
 ---
 
