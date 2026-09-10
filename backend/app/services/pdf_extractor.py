@@ -61,8 +61,9 @@ def _is_pdf_domain_trusted(pdf_url: str) -> bool:
 async def _download_pdf(pdf_url: str) -> bytes:
     """Download PDF bytes from a URL with timeout and size check."""
     headers = {
-        "User-Agent": "SchemeSetu-GovBot/1.0 (+https://schemesetu.gov.in; PDF Ingestion)",
-        "Accept": "application/pdf,*/*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "application/pdf,application/xhtml+xml,text/html;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
     }
     async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=PDF_DOWNLOAD_TIMEOUT) as client:
         resp = await client.get(pdf_url)

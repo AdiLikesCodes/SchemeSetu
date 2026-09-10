@@ -125,20 +125,48 @@ async def _scrape_with_firecrawl(url: str) -> PageContent:
     from firecrawl import FirecrawlApp
     app = FirecrawlApp(api_key=api_key)
 
-    # Run in a thread pool since firecrawl-py synchronous client is blocking
-    loop = asyncio.get_event_loop()
-    result = await loop.run_in_executor(
-        None,
-        lambda: app.scrape_url(url, params={"formats": ["markdown", "html"]}),
-    )
+    try:
+        # Run in a thread pool since firecrawl-py synchronous client is blocking
+        loop = asyncio.get_event_loop()
+
+        def _execute_scrape():
+            # Support firecrawl-py v4.x (app.scrape) and v1/v2 compatibility (app.scrape_url)
+            if hasattr(app, "scrape"):
+                try:
+                    return app.scrape(url, formats=["markdown", "html"])
+                except TypeError:
+                    return app.scrape_url(url, params={"formats": ["markdown", "html"]})
+            return app.scrape_url(url, params={"formats": ["markdown", "html"]})
+
+        result = await loop.run_in_executor(None, _execute_scrape)
+    except Exception as exc:
+        err_msg = f"[FIRECRAWL ERROR] Scrape failed for {url} ({type(exc).__name__}): {exc}"
+        logger.error(err_msg)
+        print(err_msg)
+        raise
 
     if not result:
-        raise RuntimeError("Firecrawl returned an empty response.")
+        err_msg = f"[FIRECRAWL ERROR] Firecrawl returned an empty response for {url}"
+        logger.error(err_msg)
+        print(err_msg)
+        raise RuntimeError(err_msg)
 
-    markdown = result.get("markdown", "")
-    html = result.get("html", "")
-    metadata = result.get("metadata", {})
-    title = metadata.get("title", "")
+    # Extract markdown, html, and title supporting both pydantic Document model and dict
+    if isinstance(result, dict):
+        markdown = result.get("markdown", "") or ""
+        html = result.get("html", "") or ""
+        metadata = result.get("metadata", {}) or {}
+        title = metadata.get("title", "") if isinstance(metadata, dict) else getattr(metadata, "title", "") or ""
+    else:
+        markdown = getattr(result, "markdown", "") or ""
+        html = getattr(result, "html", "") or ""
+        metadata = getattr(result, "metadata", None)
+        if isinstance(metadata, dict):
+            title = metadata.get("title", "") or ""
+        elif metadata:
+            title = getattr(metadata, "title", "") or ""
+        else:
+            title = ""
 
     pdf_links, scheme_links = _extract_pdf_and_scheme_links(html, url)
 
@@ -168,12 +196,19 @@ async def _scrape_with_httpx(url: str, failure_reason: str | None = None) -> Pag
     last_error: Exception | None = None
 
     headers = {
-        "User-Agent": (
-            "SchemeSetu-GovBot/1.0 (+https://schemesetu.gov.in; "
-            "contact: admin@schemesetu.gov.in; Indian Government Scheme Ingestion)"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "en-US,en;q=0.9,hi;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
     }
 
     for attempt in range(MAX_RETRIES):
@@ -236,11 +271,13 @@ async def scrape_url(url: str) -> PageContent:
             logger.info(f"Attempting Firecrawl scrape for {url}")
             return await _scrape_with_firecrawl(url)
         except Exception as exc:
-            firecrawl_failure = f"Firecrawl error: {exc}"
-            logger.warning(
-                f"Firecrawl failed for {url} ({exc}). "
+            firecrawl_failure = f"Firecrawl error ({type(exc).__name__}): {exc}"
+            msg = (
+                f"[FIRECRAWL FALLBACK] Firecrawl failed for {url} ({exc}). "
                 "Falling back to httpx — extraction_method will be recorded as 'httpx_fallback'."
             )
+            logger.warning(msg)
+            print(msg)
     else:
         firecrawl_failure = "FIRECRAWL_API_KEY is not configured; using default httpx fallback."
         logger.info(f"No Firecrawl key configured. Using httpx fallback for {url}")

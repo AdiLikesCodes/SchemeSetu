@@ -6,14 +6,17 @@ readme = "README.md"
 authors = [
     { name = "SchemeSetu Team" }
 ]
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "beanie>=2.2.0",
     "fastapi==0.141.1",
     "firecrawl-py>=4.42.0",
     "google-cloud-dlp==3.25.0",
     "google-genai==2.22.0",
+    "langchain>=0.3.0",
+    "langchain-google-genai>=2.0.0",
     "motor>=3.7.1",
+    "opencv-python-headless",
     "paddleocr==2.10.0",
     "paddlepaddle==3.3.1",
     "pdfplumber>=0.11.10",
