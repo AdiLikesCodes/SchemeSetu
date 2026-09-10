@@ -79,6 +79,11 @@ Detailed phase deliverables, migration decisions, and architectural records can 
 - [API Migration & Contract](docs/API_MIGRATION.md)
 - [AI Boundaries](docs/AI_BOUNDARY.md)
 - [Final Target Architecture](docs/ARCHITECTURE.md)
+- [Compliance & DPDP Framework](docs/COMPLIANCE.md)
+- [Security Defenses](docs/SECURITY.md)
+- [Audit Trail & Hashing](docs/AUDIT.md)
+- [Data Flow Diagram](docs/DATA_FLOW.md)
+- [Threat Model](docs/THREAT_MODEL.md)
 
 ---
 
