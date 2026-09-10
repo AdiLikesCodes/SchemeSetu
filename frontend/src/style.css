@@ -1,14 +1,98 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700;800;900&family=Noto+Serif:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
+/* ── Government of India Design Tokens ─────────────────────────────────────── */
+:root {
+  /* Core Government Colors */
+  --gov-navy-950: #12304A;  /* Deep Navy */
+  --gov-navy-900: #153A5B;
+  --gov-blue-700: #1E5AA8;  /* Government Blue */
+  --gov-blue-600: #2563EB;
+  --gov-blue-50:  #EFF6FF;
+  
+  /* Accents */
+  --gov-green-700: #16834B; /* Government Green */
+  --gov-green-100: #DCFCE7;
+  --gov-green-50:  #F0FDF4;
+
+  --gov-saffron-600: #E67E22; /* Saffron Accent */
+  --gov-saffron-50:  #FFF7ED;
+
+  /* Surfaces & Text */
+  --gov-bg:      #F6F8FA; /* Page Background */
+  --gov-surface: #FFFFFF; /* Card Surface */
+  --gov-text:    #17212B; /* Primary High-Contrast Text */
+  --gov-muted:   #667085; /* Muted Secondary Text */
+  --gov-border:  #D9E1E8; /* Border */
+}
 
 * {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #0f1117;
-  color: #e2e8f0;
+  padding: 0;
+  font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--gov-bg);
+  color: var(--gov-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Accessible Focus & Touch Target Standards ──────────────────────────────── */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+/* Ensure minimum touch target size for common users on touch devices */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #EEF2F6; }
+::-webkit-scrollbar-thumb { background: var(--gov-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gov-muted); }
+
+/* ── National Emblem Tricolor Stripe ────────────────────────────────────────── */
+.gov-tricolor-bar {
+  background: linear-gradient(to right,
+    #FF9933 0%, #FF9933 33.33%,
+    #FFFFFF 33.33%, #FFFFFF 66.66%,
+    #138808 66.66%, #138808 100%
+  );
+  height: 3px;
+}
+
+/* ── Text Selection ─────────────────────────────────────────────────────────── */
+::selection {
+  background-color: var(--gov-blue-700);
+  color: #ffffff;
+}
+
+/* ── Accessibility Text Size Modes ──────────────────────────────────────────── */
+body.font-size-large {
+  font-size: 112.5%; /* 18px base */
+}
+body.font-size-xlarge {
+  font-size: 125%; /* 20px base */
+}
+
+/* ── High Contrast Mode ─────────────────────────────────────────────────────── */
+body.high-contrast {
+  --gov-bg: #FFFFFF;
+  --gov-surface: #FFFFFF;
+  --gov-text: #000000;
+  --gov-muted: #1A1A1A;
+  --gov-border: #000000;
+  --gov-navy-950: #000000;
+  --gov-blue-700: #002D62;
+}
+
+/* ── Simple Mode Utilities ──────────────────────────────────────────────────── */
+.simple-mode-hidden {
+  display: none !important;
 }

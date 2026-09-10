@@ -1,138 +1,152 @@
-import { 
-  CheckCircle2, 
-  ArrowRight, 
-  Calculator, 
-  MapPin, 
-  Award, 
-  TrendingUp, 
-  Sparkles, 
-  ShieldAlert,
-  ChevronRight
+import {
+  CheckCircle2,
+  ArrowRight,
+  Calculator,
+  MapPin,
+  Award,
+  TrendingUp,
+  ChevronRight,
+  FileText,
+  Clock,
+  FolderCheck,
+  FileCheck,
+  HelpCircle
 } from 'lucide-react'
 import useChatStore from '../store/chatStore'
+import NextStepCard from '../components/NextStepCard'
 
 export default function Dashboard() {
-  const { 
-    userProfile, 
-    schemes, 
-    setActiveTab, 
-    setSelectedScheme 
-  } = useChatStore()
+  const { userProfile, schemes, setActiveTab, setSelectedScheme, activeApplication, documents, partners } = useChatStore()
 
-  const eligibleSchemes = schemes.filter(s => s.eligible)
+  const eligibleSchemes = schemes.filter((s) => s.eligible)
 
   const handleViewScheme = (scheme) => {
     setSelectedScheme(scheme)
     setActiveTab('scheme-details')
   }
 
+  // Calculate profile completion percentage
+  const profileKeys = ['name', 'category', 'income', 'age', 'state', 'businessType']
+  const filledCount = profileKeys.filter((k) => userProfile[k] && userProfile[k] !== 0).length
+  const completionPct = Math.round((filledCount / profileKeys.length) * 100)
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* ── Welcome Banner ─────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-900/60 via-slate-900 to-indigo-950/80 border border-indigo-500/30 p-6 md:p-8">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── Welcome Banner ─────────────────────────────────────────────── */}
+      <div className="bg-white border border-[#D9E1E8] rounded-2xl p-6 md:p-8 text-[#12304A] shadow-2xs space-y-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-xs font-semibold">
-              <Sparkles size={14} />
-              <span>AI Onboarding Completed</span>
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#1E5AA8] uppercase">
+              <span>Beneficiary Dashboard</span>
+              <span>•</span>
+              <span>MoSJE Scheme Assistance</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-              Welcome, {userProfile.name}! 👋
+
+            <h1 className="text-2xl md:text-3xl font-black text-[#12304A] tracking-tight">
+              Good day, {userProfile.name || 'Beneficiary'}!
             </h1>
-            <p className="text-sm text-slate-300 max-w-xl">
-              Based on your profile as an <span className="text-indigo-300 font-semibold">{userProfile.category} category</span> applicant with annual income of <span className="text-indigo-300 font-semibold">₹{(userProfile.income / 100000).toFixed(2)} Lakh</span>, we have analyzed government schemes for you.
+
+            <p className="text-xs sm:text-sm text-[#667085] max-w-2xl leading-relaxed">
+              Your SchemeSetu profile is <strong className="text-[#16834B]">{completionPct}% complete</strong>.
+              Based on your <strong className="text-[#12304A]">{userProfile.category || 'SC'}</strong> category status and annual income of <strong className="text-[#12304A]">₹{(userProfile.income / 100000).toFixed(2)} Lakh</strong>, we have verified suitable schemes for you.
             </p>
           </div>
 
           <button
             onClick={() => setActiveTab('scheme-results')}
-            className="self-start md:self-center shrink-0 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.02]"
+            className="self-start md:self-center shrink-0 touch-target px-5 py-3 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center gap-2 shadow-2xs transition-colors cursor-pointer"
           >
-            <span>View All Matched Schemes</span>
+            <span>View Matched Schemes ({eligibleSchemes.length})</span>
             <ArrowRight size={16} />
           </button>
         </div>
-      </div>
 
-      {/* ── Status Grid & Summary ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Eligibility Checklist Card */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-wider">Eligibility Status</h3>
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[11px] font-semibold border border-emerald-500/20">
-              Verified
-            </span>
+        {/* Profile Completion Bar */}
+        <div className="pt-3 border-t border-gray-100 space-y-1.5">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="text-[#667085]">Profile Completion</span>
+            <span className="text-[#16834B]">{completionPct}% Completed</span>
           </div>
-
-          <div className="space-y-3 pt-1">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-                <span className="text-xs font-medium text-slate-200">Profile completed</span>
-              </div>
-              <span className="text-[11px] text-slate-400 font-mono">100%</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-                <span className="text-xs font-medium text-slate-200">Documents verified</span>
-              </div>
-              <span className="text-[11px] text-slate-400 font-mono">3 / 3</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/60 border border-slate-700/50">
-              <div className="flex items-center gap-2.5">
-                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-                <span className="text-xs font-medium text-slate-200">4 schemes matched</span>
-              </div>
-              <span className="text-[11px] text-emerald-400 font-bold font-mono">4 Total</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Big Stat Cards */}
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-indigo-950/60 via-slate-900 to-slate-900 border border-indigo-500/20 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">Total Schemes Matched</span>
-              <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-                <Award size={20} />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-white">{schemes.length} Schemes</div>
-              <p className="text-xs text-slate-400 mt-1">Evaluated by deterministic rule engine</p>
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-emerald-950/50 via-slate-900 to-slate-900 border border-emerald-500/20 rounded-2xl p-6 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-300 uppercase tracking-wider">Directly Eligible</span>
-              <div className="w-10 h-10 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <TrendingUp size={20} />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-emerald-400">{eligibleSchemes.length} Eligible</div>
-              <p className="text-xs text-slate-400 mt-1">Satisfying 100% of ministry guidelines</p>
-            </div>
+          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-[#16834B] rounded-full transition-all duration-300"
+              style={{ width: `${completionPct}%` }}
+            />
           </div>
         </div>
       </div>
 
-      {/* ── Recommended for You ────────────────────────────────────────── */}
+      {/* ── 4 Quick Metric Cards ─────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <button
+          onClick={() => setActiveTab('scheme-results')}
+          className="touch-target p-5 rounded-2xl bg-white border border-[#D9E1E8] hover:border-[#1E5AA8] text-left transition-all shadow-2xs group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1E5AA8] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <Award size={20} />
+          </div>
+          <span className="text-[11px] font-bold text-[#667085] uppercase block">Eligible Schemes</span>
+          <div className="text-2xl font-black text-[#12304A] mt-0.5">{eligibleSchemes.length} Schemes</div>
+          <span className="text-[10px] text-[#16834B] font-bold mt-1 inline-block">100% Rules Met ✓</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('applications')}
+          className="touch-target p-5 rounded-2xl bg-white border border-[#D9E1E8] hover:border-[#1E5AA8] text-left transition-all shadow-2xs group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#E67E22] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <FolderCheck size={20} />
+          </div>
+          <span className="text-[11px] font-bold text-[#667085] uppercase block">Active Applications</span>
+          <div className="text-2xl font-black text-[#12304A] mt-0.5">1 Active</div>
+          <span className="text-[10px] text-[#E67E22] font-bold mt-1 inline-block">Under Review</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('documents')}
+          className="touch-target p-5 rounded-2xl bg-white border border-[#D9E1E8] hover:border-[#1E5AA8] text-left transition-all shadow-2xs group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-green-50 text-[#16834B] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <FileCheck size={20} />
+          </div>
+          <span className="text-[11px] font-bold text-[#667085] uppercase block">My Documents</span>
+          <div className="text-2xl font-black text-[#12304A] mt-0.5">{documents.length} Uploaded</div>
+          <span className="text-[10px] text-[#16834B] font-bold mt-1 inline-block">Verified Ready ✓</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('partner-finder')}
+          className="touch-target p-5 rounded-2xl bg-white border border-[#D9E1E8] hover:border-[#1E5AA8] text-left transition-all shadow-2xs group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <MapPin size={20} />
+          </div>
+          <span className="text-[11px] font-bold text-[#667085] uppercase block">Where to Apply</span>
+          <div className="text-2xl font-black text-[#12304A] mt-0.5">{partners.length} Nearby</div>
+          <span className="text-[10px] text-[#1E5AA8] font-bold mt-1 inline-block">SCAs & Banks</span>
+        </button>
+      </div>
+
+      {/* ── What Should I Do Now? Next Step ─────────────────────────────── */}
+      <NextStepCard
+        title="Your Next Step"
+        stepNumber="2"
+        description="Review the 3 government schemes that matched your business needs, or estimate your monthly repayment."
+        actionText="Review Schemes"
+        actionTab="scheme-results"
+        variant="primary"
+      />
+
+      {/* ── Recommended Schemes Section ──────────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-white">Recommended for You</h3>
-            <p className="text-xs text-slate-400">Top government schemes matching your profile parameters</p>
+            <h2 className="text-lg font-black text-[#12304A]">Recommended for You</h2>
+            <p className="text-xs text-[#667085]">Top schemes matching your category, income, and business interest</p>
           </div>
-          <button 
+          <button
             onClick={() => setActiveTab('scheme-results')}
-            className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+            className="text-xs font-bold text-[#1E5AA8] hover:underline flex items-center gap-1"
           >
             <span>View All</span>
             <ChevronRight size={14} />
@@ -141,48 +155,49 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {eligibleSchemes.slice(0, 2).map((scheme) => (
-            <div 
+            <div
               key={scheme.id}
-              className="bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-5 transition-all duration-200 flex flex-col justify-between gap-4"
+              className="bg-white border-2 border-[#D9E1E8] hover:border-[#1E5AA8] rounded-2xl p-5 transition-all flex flex-col justify-between gap-4 shadow-2xs"
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">{scheme.ministry}</span>
-                    <h4 className="text-base font-bold text-white mt-0.5">{scheme.name}</h4>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#667085]">{scheme.ministry}</span>
+                    <h3 className="text-base font-black text-[#12304A] mt-0.5">{scheme.name}</h3>
                   </div>
-                  <span className="shrink-0 px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-[10px] font-bold border border-emerald-500/20">
+                  <span className="shrink-0 px-2.5 py-1 rounded-lg bg-[#DCFCE7] text-[#16834B] text-[10px] font-bold border border-[#BBF7D0]">
                     Eligible ✓
                   </span>
                 </div>
 
-                <div className="mt-4 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center justify-between">
+                <div className="mt-3.5 p-3 rounded-xl bg-[#F6F8FA] border border-[#D9E1E8] flex items-center justify-between text-xs">
                   <div>
-                    <p className="text-[10px] text-slate-400 uppercase">Potential benefit</p>
-                    <p className="text-base font-extrabold text-slate-100">{scheme.maxLoanText}</p>
+                    <span className="text-[10px] text-[#667085] uppercase block font-bold">Funding Amount</span>
+                    <span className="text-base font-black text-[#16834B]">{scheme.maxLoanText}</span>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] text-slate-400 uppercase">Interest Rate</p>
-                    <p className="text-xs font-bold text-emerald-400">{scheme.interestRate}</p>
+                    <span className="text-[10px] text-[#667085] uppercase block font-bold">Interest Rate</span>
+                    <span className="text-xs font-black text-[#12304A]">{scheme.interestRate}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                 <button
                   onClick={() => handleViewScheme(scheme)}
-                  className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                  className="flex-1 touch-target py-2.5 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <span>View Scheme</span>
-                  <ArrowRight size={14} />
+                  <FileText size={14} />
+                  <span>See How It Works</span>
+                  <ArrowRight size={13} />
                 </button>
                 <button
                   onClick={() => {
                     setSelectedScheme(scheme)
                     setActiveTab('calculator')
                   }}
-                  className="px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
-                  title="Calculate EMI"
+                  className="touch-target px-3.5 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-[#12304A] text-xs font-bold transition-colors cursor-pointer"
+                  title="Estimate EMI"
                 >
                   <Calculator size={15} />
                 </button>
@@ -192,29 +207,29 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Quick Action Toolbar ────────────────────────────────────────── */}
-      <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h4 className="text-sm font-bold text-slate-200">Next Recommended Steps</h4>
-          <p className="text-xs text-slate-400">Calculate financial costs or locate channel partners to begin your application</p>
+      {/* ── Application Tracking Summary ─────────────────────────────────── */}
+      <div className="p-5 rounded-2xl bg-white border border-[#D9E1E8] shadow-2xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock size={16} className="text-[#1E5AA8]" />
+            <h3 className="text-sm font-black text-[#12304A]">Live Application Status</h3>
+          </div>
+          <button
+            onClick={() => setActiveTab('applications')}
+            className="text-xs font-bold text-[#1E5AA8] hover:underline"
+          >
+            Track Details →
+          </button>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button
-            onClick={() => setActiveTab('calculator')}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors"
-          >
-            <Calculator size={16} className="text-indigo-400" />
-            <span>Calculate Finance</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('partner-finder')}
-            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors shadow-md shadow-indigo-600/20"
-          >
-            <MapPin size={16} />
-            <span>Find Partner</span>
-          </button>
+        <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div>
+            <span className="font-extrabold text-[#12304A] block">NSFDC Term Loan — Ref #{activeApplication.applicationId}</span>
+            <span className="text-[#667085]">Under Review by Kerala SC/ST Development Corporation</span>
+          </div>
+          <span className="px-2.5 py-1 rounded-lg bg-white text-[#1E5AA8] font-bold border border-blue-200 shrink-0">
+            Stage 5: Under Review
+          </span>
         </div>
       </div>
     </div>

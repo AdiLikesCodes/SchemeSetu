@@ -326,9 +326,14 @@ const useChatStore = create((set, get) => ({
   // ── Navigation ──────────────────────────────────────────────────────────────
   activeTab: savedSession.userProfile.isAuthenticated
     ? (savedSession.userProfile.role === 'admin' ? 'admin' : 'dashboard')
-    : 'auth',
+    : 'landing',
   sidebarOpen: false,
   adminTab: 'scraper',
+
+  // ── Citizen Usability & Accessibility State ────────────────────────────────
+  simpleMode: true, // Simple View ON by default for common users with limited digital literacy
+  fontSize: 'normal', // 'normal' | 'large' | 'xlarge'
+  highContrast: false,
 
   // ── Chat State (live backend) ───────────────────────────────────────────────
   sessionId: null,
@@ -374,9 +379,14 @@ const useChatStore = create((set, get) => ({
   // ── Navigation Actions ──────────────────────────────────────────────────────
   setActiveTab: (tab) => {
     const isAuth = get().userProfile?.isAuthenticated
-    const targetTab = isAuth ? tab : 'auth'
+    // Allow public browsing for landing, find help, schemes, details, calculator, partners, auth
+    const publicTabs = ['landing', 'ai-onboarding', 'scheme-results', 'scheme-details', 'calculator', 'partner-finder', 'auth']
+    const targetTab = (!isAuth && !publicTabs.includes(tab)) ? 'auth' : tab
     set({ activeTab: targetTab, sidebarOpen: false })
   },
+  toggleSimpleMode: () => set((state) => ({ simpleMode: !state.simpleMode })),
+  setFontSize: (size) => set({ fontSize: size }),
+  toggleHighContrast: () => set((state) => ({ highContrast: !state.highContrast })),
   setSidebarOpen: (isOpen) => set({ sidebarOpen: isOpen }),
   setAdminTab: (tab) => set({ adminTab: tab }),
   setSelectedScheme: (scheme) => set({ selectedScheme: scheme }),

@@ -1,23 +1,22 @@
 import { useState } from 'react'
-import { 
-  Lock, 
-  Mail, 
-  UserCheck, 
-  ArrowRight, 
-  AlertCircle, 
+import {
+  Lock,
+  Mail,
+  ArrowRight,
+  AlertCircle,
   Loader2,
   ShieldCheck,
-  Sparkles,
   User,
-  KeyRound
+  KeyRound,
+  Building2,
+  ArrowLeft
 } from 'lucide-react'
 import useChatStore from '../store/chatStore'
 
 export default function Auth() {
-  const { loginUser, signupUser } = useChatStore()
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  const { loginUser, signupUser, setActiveTab } = useChatStore()
+  const [mode, setMode] = useState('login')
 
-  // Form states
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
@@ -25,7 +24,7 @@ export default function Auth() {
   const [category, setCategory] = useState('SC')
   const [stateName, setStateName] = useState('Kerala')
   const [district, setDistrict] = useState('Thiruvananthapuram')
-  const [role, setRole] = useState('beneficiary') // 'beneficiary' | 'admin'
+  const [role, setRole] = useState('beneficiary')
 
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
@@ -37,9 +36,7 @@ export default function Auth() {
 
     if (mode === 'login') {
       const res = await loginUser(email, password)
-      if (!res.success) {
-        setErrorMsg(res.error || 'Invalid email or password. Please try again.')
-      }
+      if (!res.success) setErrorMsg(res.error || 'Invalid email or password. Please try again.')
     } else {
       if (!fullName.trim()) {
         setErrorMsg('Full name is required.')
@@ -56,15 +53,11 @@ export default function Auth() {
         district,
         role,
       })
-      if (!res.success) {
-        setErrorMsg(res.error || 'Registration failed. Please try again.')
-      }
+      if (!res.success) setErrorMsg(res.error || 'Registration failed. Please try again.')
     }
-
     setLoading(false)
   }
 
-  // Quick Demo Logins for evaluators
   const handleQuickDemo = async (demoRole) => {
     setLoading(true)
     setErrorMsg('')
@@ -72,7 +65,6 @@ export default function Auth() {
     const demoPass = 'DemoPass@123'
     const res = await loginUser(demoEmail, demoPass)
     if (!res.success) {
-      // If demo user doesn't exist yet in db, create them on the fly
       const signupRes = await signupUser({
         full_name: demoRole === 'admin' ? 'MoSJE Admin Officer' : 'Rajesh Kumar',
         email: demoEmail,
@@ -83,235 +75,217 @@ export default function Auth() {
         district: 'Thiruvananthapuram',
         role: demoRole,
       })
-      if (!signupRes.success) {
-        setErrorMsg(signupRes.error || 'Quick login failed')
-      }
+      if (!signupRes.success) setErrorMsg(signupRes.error || 'Quick login failed')
     }
     setLoading(false)
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center p-4 sm:p-6">
-      <div className="max-w-md w-full bg-slate-900/90 border border-slate-800/80 rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 backdrop-blur-xl relative overflow-hidden">
-        
-        {/* Glow ambient accent */}
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-600/20 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-4 sm:p-6 bg-[#F6F8FA]">
+      <div className="max-w-md w-full space-y-4">
+        {/* Back to Home Link */}
+        <button
+          onClick={() => setActiveTab('landing')}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E5AA8] hover:text-[#12304A] transition-colors"
+        >
+          <ArrowLeft size={14} />
+          <span>Back to Home</span>
+        </button>
 
-        {/* Header Emblem */}
-        <div className="text-center space-y-2 relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white text-2xl font-black mx-auto flex items-center justify-center shadow-lg shadow-indigo-600/30">
-            🏛️
+        {/* ── Official Seal Header ── */}
+        <div className="text-center space-y-2">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-white border border-[#D9E1E8] flex items-center justify-center shadow-xs">
+            <Building2 size={28} className="text-[#12304A]" />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-2xl font-black text-white tracking-tight">SchemeSetu Portal</h1>
-            <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">
-              Ministry of Social Justice & Empowerment
+          <div>
+            <h1 className="text-2xl font-black text-[#12304A] tracking-tight">SchemeSetu Portal</h1>
+            <p className="text-xs font-bold text-[#667085] uppercase tracking-wide mt-0.5">
+              Ministry of Social Justice & Empowerment • Govt. of India
             </p>
           </div>
-        </div>
-
-        {/* Tab Toggle: Login vs Signup */}
-        <div className="flex bg-slate-800/70 p-1 rounded-xl border border-slate-700/60 text-xs font-bold relative z-10">
-          <button
-            type="button"
-            onClick={() => { setMode('login'); setErrorMsg('') }}
-            className={`flex-1 py-2.5 rounded-lg transition-all ${
-              mode === 'login' 
-                ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-600/30' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Beneficiary Login
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode('signup'); setErrorMsg('') }}
-            className={`flex-1 py-2.5 rounded-lg transition-all ${
-              mode === 'signup' 
-                ? 'bg-indigo-600 text-white font-extrabold shadow-md shadow-indigo-600/30' 
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            New Registration
-          </button>
-        </div>
-
-        {/* Error Alert */}
-        {errorMsg && (
-          <div className="p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex items-center gap-2.5 font-medium relative z-10">
-            <AlertCircle size={18} className="text-rose-400 shrink-0" />
-            <span>{errorMsg}</span>
+          {/* Subtle Tricolor line */}
+          <div className="flex justify-center gap-0.5 mt-1">
+            <div className="h-1 w-6 rounded-l-full bg-[#FF9933]" />
+            <div className="h-1 w-6 bg-white border-y border-gray-200" />
+            <div className="h-1 w-6 rounded-r-full bg-[#138808]" />
           </div>
-        )}
+        </div>
 
-        {/* Auth Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs relative z-10">
-          
-          {mode === 'signup' && (
-            <div className="space-y-1.5">
-              <label className="font-bold text-slate-300">Full Name (As in Aadhaar)</label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Rajesh Kumar"
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-              />
+        {/* ── Auth Card ── */}
+        <div className="bg-white border border-[#D9E1E8] rounded-2xl shadow-xs p-6 sm:p-8 space-y-5">
+          {/* Tab Toggle */}
+          <div className="flex rounded-xl overflow-hidden border border-[#D9E1E8] text-xs font-bold bg-[#F6F8FA] p-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login')
+                setErrorMsg('')
+              }}
+              className={`flex-1 py-2 rounded-lg transition-colors cursor-pointer ${
+                mode === 'login' ? 'bg-[#12304A] text-white shadow-xs' : 'text-[#667085] hover:text-[#12304A]'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup')
+                setErrorMsg('')
+              }}
+              className={`flex-1 py-2 rounded-lg transition-colors cursor-pointer ${
+                mode === 'signup' ? 'bg-[#12304A] text-white shadow-xs' : 'text-[#667085] hover:text-[#12304A]'
+              }`}
+            >
+              Register Account
+            </button>
+          </div>
+
+          {/* Error Alert */}
+          {errorMsg && (
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2.5 font-bold">
+              <AlertCircle size={16} className="text-red-500 shrink-0" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-300">Email Address</label>
-            <div className="relative">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="beneficiary@schemesetu.gov.in"
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-              />
-              <Mail size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
-            </div>
-          </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {mode === 'signup' && (
+              <div className="space-y-1">
+                <label className="font-bold text-[#12304A]">Full Name (As per Aadhaar)</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g. Rajesh Kumar"
+                  className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-4 py-2.5 font-bold text-[#12304A] placeholder-gray-400 focus:outline-none focus:border-[#1E5AA8]"
+                />
+              </div>
+            )}
 
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-300">Password</label>
-            <div className="relative">
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••••••"
-                className="w-full bg-slate-800/80 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
-              />
-              <Lock size={16} className="absolute left-3.5 top-3.5 text-slate-400" />
+            <div className="space-y-1">
+              <label className="font-bold text-[#12304A]">Email Address</label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="applicant@example.com"
+                  className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl pl-9 pr-4 py-2.5 font-bold text-[#12304A] placeholder-gray-400 focus:outline-none focus:border-[#1E5AA8]"
+                />
+                <Mail size={15} className="absolute left-3 top-3 text-[#667085]" />
+              </div>
             </div>
-          </div>
 
-          {mode === 'signup' && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="9876543210"
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  />
+            <div className="space-y-1">
+              <label className="font-bold text-[#12304A]">Password</label>
+              <div className="relative">
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••••••"
+                  className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl pl-9 pr-4 py-2.5 font-bold text-[#12304A] placeholder-gray-400 focus:outline-none focus:border-[#1E5AA8]"
+                />
+                <Lock size={15} className="absolute left-3 top-3 text-[#667085]" />
+              </div>
+            </div>
+
+            {mode === 'signup' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-[#12304A]">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="9876543210"
+                      className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-3 py-2 font-bold text-[#12304A] focus:outline-none focus:border-[#1E5AA8]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-[#12304A]">Category</label>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-3 py-2 font-bold text-[#12304A] focus:outline-none focus:border-[#1E5AA8]"
+                    >
+                      <option value="SC">Scheduled Caste (SC)</option>
+                      <option value="ST">Scheduled Tribe (ST)</option>
+                      <option value="OBC">OBC</option>
+                      <option value="General">General / EWS</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">Social Category</label>
+                <div className="space-y-1">
+                  <label className="font-bold text-[#12304A]">Account Role</label>
                   <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-indigo-500"
+                    value={role}
+                    onChange={(e) => setRole(e.target.value)}
+                    className="w-full bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-3 py-2 font-bold text-[#12304A] focus:outline-none focus:border-[#1E5AA8]"
                   >
-                    <option value="SC">Scheduled Caste (SC)</option>
-                    <option value="ST">Scheduled Tribe (ST)</option>
-                    <option value="OBC">OBC</option>
-                    <option value="General">General / EWS</option>
+                    <option value="beneficiary">Beneficiary Applicant (Citizen Access)</option>
+                    <option value="admin">MoSJE Admin Officer (Admin Portal Access)</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">State</label>
-                  <input
-                    type="text"
-                    value={stateName}
-                    onChange={(e) => setStateName(e.target.value)}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-slate-300">District</label>
-                  <input
-                    type="text"
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-slate-300">Account Access Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-slate-800/80 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="beneficiary">Beneficiary User (Applicant Access)</option>
-                  <option value="admin">MoSJE Admin Officer (Admin Scraper & Portal Access)</option>
-                </select>
-                <p className="text-[11px] text-slate-400">
-                  {role === 'admin'
-                    ? '🔑 Role saved in MongoDB: Full access to Ingestion Pipeline & Scheme Review'
-                    : '👤 Role saved in MongoDB: Access to Beneficiary Dashboard & AI Scheme Finder'}
-                </p>
-              </div>
-            </>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/30 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-          >
-            {loading ? (
-              <Loader2 size={16} className="animate-spin" />
-            ) : (
-              <>
-                <span>{mode === 'login' ? 'Sign In to Portal' : 'Register Beneficiary Account'}</span>
-                <ArrowRight size={15} />
               </>
             )}
-          </button>
-        </form>
 
-        {/* Quick Demo Access Buttons for Evaluators */}
-        <div className="pt-3 border-t border-slate-800/80 space-y-2 relative z-10">
-          <p className="text-[11px] font-semibold text-slate-400 text-center">
-            Instant Demo Logins (No typing required)
-          </p>
-          <div className="grid grid-cols-2 gap-2">
             <button
-              type="button"
-              onClick={() => handleQuickDemo('beneficiary')}
+              type="submit"
               disabled={loading}
-              className="py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              className="w-full touch-target py-3 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             >
-              <User size={13} className="text-indigo-400" />
-              <span>Demo Beneficiary</span>
+              {loading ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <>
+                  <span>{mode === 'login' ? 'Sign In to Account' : 'Register Account'}</span>
+                  <ArrowRight size={15} />
+                </>
+              )}
             </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo('admin')}
-              disabled={loading}
-              className="py-2.5 px-3 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-amber-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <KeyRound size={13} className="text-amber-400" />
-              <span>Demo Admin Officer</span>
-            </button>
+          </form>
+
+          {/* Instant Demo Logins */}
+          <div className="pt-3 border-t border-gray-100 space-y-2.5">
+            <span className="text-[10px] font-bold text-[#667085] text-center block uppercase tracking-wider">
+              Instant Demo Access
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleQuickDemo('beneficiary')}
+                disabled={loading}
+                className="touch-target py-2.5 px-3 rounded-xl bg-[#F6F8FA] hover:bg-blue-50 border border-[#D9E1E8] hover:border-blue-200 text-[#12304A] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <User size={13} className="text-[#1E5AA8]" />
+                <span>Demo Beneficiary</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemo('admin')}
+                disabled={loading}
+                className="touch-target py-2.5 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-[#C2410C] text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <KeyRound size={13} className="text-[#E67E22]" />
+                <span>Demo Admin Officer</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Security Notice Footer */}
-        <div className="pt-2 text-center relative z-10">
-          <p className="text-[10px] text-slate-500">
-            Protected by Government Encryption Standard • MoSJE Role-Based Access Control
-          </p>
+        {/* Security Footer */}
+        <div className="text-center text-[10px] text-[#667085] flex items-center justify-center gap-1.5">
+          <ShieldCheck size={13} className="text-[#16834B]" />
+          <span>Protected by Government Encryption Standards • MoSJE RBAC</span>
         </div>
-
       </div>
     </div>
   )

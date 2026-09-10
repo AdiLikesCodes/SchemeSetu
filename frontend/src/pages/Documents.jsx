@@ -1,23 +1,26 @@
 import { useState, useRef } from 'react'
-import { 
-  FileCheck, 
-  Upload, 
-  CheckCircle2, 
-  Loader2, 
-  Edit3, 
-  ShieldCheck, 
-  Eye, 
+import {
+  FileCheck,
+  Upload,
+  CheckCircle2,
+  Loader2,
+  Edit3,
+  ShieldCheck,
+  Eye,
   Sparkles,
   AlertCircle,
-  FileText
+  FileText,
+  Clock,
+  ArrowRight
 } from 'lucide-react'
 import useChatStore from '../store/chatStore'
+import NextStepCard from '../components/NextStepCard'
 
 export default function Documents() {
-  const { documents, ocrState, simulatePaddleOCRUpload, confirmOcrData, resetOcrState } = useChatStore()
+  const { documents, ocrState, simulatePaddleOCRUpload, confirmOcrData, resetOcrState, setActiveTab } = useChatStore()
   const fileInputRef = useRef(null)
 
-  // Editable fields during OCR confirm step
+  // Editable fields during OCR review & confirmation
   const [editFields, setEditFields] = useState({})
 
   const handleFileChange = (e) => {
@@ -26,36 +29,29 @@ export default function Documents() {
     simulatePaddleOCRUpload(file)
   }
 
-  const handleStartConfirm = () => {
-    setEditFields(ocrState.extractedData || {})
-  }
-
   const handleFieldChange = (key, value) => {
     setEditFields((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleFinalSubmit = () => {
-    confirmOcrData(editFields)
+    confirmOcrData(Object.keys(editFields).length ? editFields : ocrState.extractedData)
   }
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-semibold mb-2">
-            <Sparkles size={14} />
-            <span>PaddleOCR Engine v2.7 Active</span>
-          </div>
-          <h1 className="text-xl md:text-2xl font-black text-white">MY DOCUMENTS & OCR VERIFICATION</h1>
-          <p className="text-xs text-slate-400">
-            Upload certificates to extract key fields automatically using PaddleOCR with mandatory user Edit/Confirm verification.
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="bg-white border border-[#D9E1E8] rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+        <div className="space-y-1">
+          <span className="text-xs font-bold text-[#1E5AA8] uppercase tracking-wider">Citizen Documents Hub</span>
+          <h1 className="text-xl md:text-2xl font-black text-[#12304A]">My Documents & Verification</h1>
+          <p className="text-xs md:text-sm text-[#667085]">
+            Keep your certificates organized for government scheme verification. You can review and edit all detected fields.
           </p>
         </div>
 
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="shrink-0 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-indigo-600/30 transition-colors"
+          className="shrink-0 touch-target px-5 py-3 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center gap-2 shadow-2xs transition-colors cursor-pointer"
         >
           <Upload size={16} />
           <span>Upload Document</span>
@@ -70,6 +66,17 @@ export default function Documents() {
         />
       </div>
 
+      {/* OCR Transparency Notice */}
+      <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 text-xs text-[#12304A] flex items-start gap-2.5">
+        <ShieldCheck size={18} className="text-[#1E5AA8] shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold block">Document Detection Notice:</span>
+          <span className="text-[#667085]">
+            Information detected from uploaded documents is extracted for your convenience. You must review and confirm all details. Original physical verification is carried out at your designated channel partner office.
+          </span>
+        </div>
+      </div>
+
       {/* ── Active Documents Grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {documents.map((doc) => {
@@ -78,53 +85,61 @@ export default function Documents() {
           return (
             <div
               key={doc.id}
-              className={`rounded-2xl p-5 border transition-all space-y-3 flex flex-col justify-between ${
+              className={`rounded-2xl p-5 border-2 transition-all space-y-3 flex flex-col justify-between ${
                 isVerified
-                  ? 'bg-slate-900/90 border-slate-800'
-                  : 'bg-slate-900/50 border-dashed border-slate-700 hover:border-indigo-500/50'
+                  ? 'bg-white border-[#D9E1E8]'
+                  : 'bg-[#F6F8FA] border-dashed border-[#D9E1E8] hover:border-[#1E5AA8]'
               }`}
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-[#1E5AA8]">
                     <FileText size={18} />
                   </div>
                   <span
-                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                       isVerified
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                        : 'bg-slate-800 text-slate-400'
+                        ? 'bg-[#DCFCE7] text-[#16834B] border-[#BBF7D0]'
+                        : 'bg-gray-100 text-gray-600 border-gray-200'
                     }`}
                   >
-                    {isVerified ? '✓ Verified' : '+ Pending'}
+                    {isVerified ? '✓ Uploaded & Checked' : '○ Please Upload'}
                   </span>
                 </div>
 
-                <h3 className="text-sm font-bold text-white">{doc.name}</h3>
+                <h3 className="text-sm font-extrabold text-[#12304A]">{doc.name}</h3>
 
                 {doc.extractedData ? (
-                  <div className="space-y-1 p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 text-xs text-slate-300 font-mono">
+                  <div className="space-y-1 p-3 rounded-xl bg-[#F6F8FA] border border-[#D9E1E8] text-xs font-medium text-[#12304A]">
                     {Object.entries(doc.extractedData).slice(0, 2).map(([k, v]) => (
                       <div key={k} className="flex justify-between">
-                        <span className="text-slate-400 capitalize">{k}:</span>
-                        <span className="font-semibold text-indigo-300 truncate max-w-[120px]">{v}</span>
+                        <span className="text-[#667085] capitalize">{k}:</span>
+                        <span className="font-bold truncate max-w-[120px]">{v}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500">Not uploaded yet</p>
+                  <p className="text-xs text-[#667085]">Not uploaded yet</p>
                 )}
               </div>
 
               {isVerified ? (
-                <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium pt-2 border-t border-slate-800">
-                  <CheckCircle2 size={13} />
-                  <span>Information extracted</span>
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs">
+                  <span className="text-[#16834B] font-bold flex items-center gap-1">
+                    <CheckCircle2 size={13} />
+                    <span>Ready</span>
+                  </span>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[#1E5AA8] font-bold hover:underline"
+                  >
+                    Replace
+                  </button>
                 </div>
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+                  className="w-full touch-target py-2 rounded-xl bg-[#12304A] text-white text-xs font-bold hover:bg-[#153A5B] transition-colors cursor-pointer"
                 >
                   + Upload Document
                 </button>
@@ -134,76 +149,82 @@ export default function Documents() {
         })}
       </div>
 
-      {/* ── PaddleOCR Upload & Verification Modal / Workflow ─────────────── */}
+      {/* ── Next Step Card ─────────────────────────────────────────────────── */}
+      <NextStepCard
+        title="Next Step"
+        stepNumber="7"
+        description="Documents uploaded? Track your application journey to see approval status and fund disbursal stages."
+        actionText="My Applications"
+        actionTab="applications"
+        variant="primary"
+      />
+
+      {/* ── OCR Review & Confirmation Modal ───────────────────────────────── */}
       {ocrState.step !== 'idle' && ocrState.step !== 'confirmed' && (
-        <div className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl">
-            
-            {/* Modal Title */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 space-y-5 shadow-2xl border border-[#D9E1E8]">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-amber-400" />
-                <h3 className="text-base font-bold text-white">PaddleOCR Field Extraction</h3>
+                <ShieldCheck size={20} className="text-[#1E5AA8]" />
+                <h3 className="text-base font-extrabold text-[#12304A]">Review Information Detected from Document</h3>
               </div>
-              <button onClick={resetOcrState} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                onClick={resetOcrState}
+                className="text-gray-400 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
 
-            {/* Stepper Status */}
             {ocrState.isProcessing ? (
               <div className="py-12 text-center space-y-4">
-                <Loader2 size={36} className="text-indigo-400 animate-spin mx-auto" />
+                <Loader2 size={36} className="text-[#1E5AA8] animate-spin mx-auto" />
                 <div className="space-y-1">
-                  <h4 className="text-base font-bold text-white">Processing Document with PaddleOCR...</h4>
-                  <p className="text-xs text-slate-400">Detecting text regions & masking sensitive PII attributes</p>
+                  <h4 className="text-base font-bold text-[#12304A]">Reading document text...</h4>
+                  <p className="text-xs text-[#667085]">Masking private Aadhaar digits and detecting income fields</p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Notice */}
-                <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-200 flex items-start gap-2">
-                  <AlertCircle size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>PaddleOCR Step:</strong> Please review the auto-extracted attributes below. You can edit any field before confirming to ensure 100% accuracy.
-                  </span>
+                <div className="p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-[#12304A]">
+                  <p className="font-bold">Please check the values below:</p>
+                  <p className="text-[#667085] mt-0.5">
+                    If any field was misread, you can edit it directly before confirming.
+                  </p>
                 </div>
 
-                {/* Extracted Fields Form */}
-                <div className="space-y-3 p-4 rounded-xl bg-slate-800/60 border border-slate-700 max-h-60 overflow-y-auto">
-                  <h4 className="text-xs font-bold text-slate-300 uppercase">Extracted Fields Preview:</h4>
-
+                <div className="space-y-3 p-4 rounded-xl bg-[#F6F8FA] border border-[#D9E1E8] max-h-60 overflow-y-auto">
                   {Object.entries(editFields.length ? editFields : ocrState.extractedData || {}).map(([key, val]) => (
                     <div key={key} className="space-y-1">
-                      <label className="text-[11px] font-medium text-slate-400 uppercase">{key}</label>
+                      <label className="text-[11px] font-bold text-[#667085] uppercase">{key}</label>
                       <input
                         type="text"
                         value={editFields[key] !== undefined ? editFields[key] : val}
                         onChange={(e) => handleFieldChange(key, e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-semibold text-slate-100 focus:outline-none focus:border-indigo-500"
+                        className="w-full bg-white border border-[#D9E1E8] rounded-xl px-3 py-2 text-xs font-bold text-[#12304A] focus:outline-none focus:border-[#1E5AA8]"
                       />
                     </div>
                   ))}
                 </div>
 
-                {/* Buttons */}
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between gap-3">
+                <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
                   <button
                     onClick={resetOcrState}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+                    className="touch-target px-4 py-2.5 rounded-xl bg-gray-100 text-[#12304A] text-xs font-bold"
                   >
                     Cancel
                   </button>
 
                   <button
                     onClick={handleFinalSubmit}
-                    className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/30"
+                    className="touch-target px-5 py-2.5 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center gap-1.5 shadow-2xs"
                   >
                     <CheckCircle2 size={16} />
-                    <span>Confirm & Update Profile</span>
+                    <span>Confirm & Save to Profile</span>
                   </button>
                 </div>
               </div>
             )}
-
           </div>
         </div>
       )}

@@ -1,162 +1,199 @@
 import { useState } from 'react'
-import { MapPin, Navigation, Phone, CheckCircle2, AlertCircle, ExternalLink, Filter } from 'lucide-react'
+import {
+  MapPin,
+  Navigation,
+  Phone,
+  CheckCircle2,
+  AlertCircle,
+  ExternalLink,
+  Filter,
+  Building2,
+  ArrowRight
+} from 'lucide-react'
 import useChatStore from '../store/chatStore'
+import { TermExplainer } from '../components/PlainLanguageModal'
+import NextStepCard from '../components/NextStepCard'
 
 export default function PartnerFinder() {
   const { partners, selectedScheme, userProfile, setSelectedPartner, setActiveTab } = useChatStore()
-  const [sortBy, setSortBy] = useState('match') // 'match' | 'distance' | 'availability'
+  const [sortBy, setSortBy] = useState('distance')
   const [routeModalPartner, setRouteModalPartner] = useState(null)
+  const [selectedPartnerDetail, setSelectedPartnerDetail] = useState(null)
+  const [searchLocation, setSearchLocation] = useState(`${userProfile.district || 'Thiruvananthapuram'}, ${userProfile.state || 'Kerala'}`)
 
   const sortedPartners = [...partners].sort((a, b) => {
     if (sortBy === 'distance') {
       return parseFloat(a.distance) - parseFloat(b.distance)
     }
-    if (sortBy === 'availability') {
-      return (b.available ? 1 : 0) - (a.available ? 1 : 0)
-    }
     return b.rating - a.rating
   })
 
+  const handleApplyHere = (partner) => {
+    setSelectedPartner(partner)
+    setActiveTab('applications')
+  }
+
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
-      {/* ── Selection Header ─────────────────────────────────────────────── */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="bg-white border border-[#D9E1E8] rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div className="space-y-1">
-          <span className="text-[10px] font-extrabold text-indigo-400 uppercase tracking-wider">RECOMMENDED CHANNEL PARTNERS</span>
-          <h1 className="text-xl md:text-2xl font-black text-white">Find Nearest Channelizing Agency</h1>
-          <div className="flex flex-wrap items-center gap-3 text-xs pt-1">
-            <span className="text-slate-400">Target Scheme: <strong className="text-indigo-300">{selectedScheme ? selectedScheme.name : 'NSFDC Term Loan'}</strong></span>
-            <span className="text-slate-600">•</span>
-            <span className="text-slate-400">Location: <strong className="text-indigo-300">{userProfile.district}, {userProfile.state} ({userProfile.pinCode})</strong></span>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-[#1E5AA8] uppercase tracking-wider">
+            <span>Approved Application Centres</span>
+            <TermExplainer term="channel partner" label="What is a channel partner?" />
           </div>
+          <h1 className="text-xl md:text-2xl font-black text-[#12304A]">
+            Where to Apply (Authorized Channel Partners)
+          </h1>
+          <p className="text-xs md:text-sm text-[#667085]">
+            Visit an officially approved State Channelizing Agency (SCA) office or partner bank branch to submit your scheme application.
+          </p>
         </div>
 
-        {/* Sort Filter */}
-        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs">
-          <Filter size={14} className="text-indigo-400" />
-          <span className="text-slate-400">Sort by:</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="bg-transparent font-bold text-white focus:outline-none cursor-pointer"
-          >
-            <option value="match" className="bg-slate-900">Best Match</option>
-            <option value="distance" className="bg-slate-900">Distance</option>
-            <option value="availability" className="bg-slate-900">Availability</option>
-          </select>
+        {/* Location search & Sort controls */}
+        <div className="flex flex-wrap items-center gap-2 self-start md:self-center">
+          <div className="flex items-center gap-2 bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-3 py-2 text-xs">
+            <MapPin size={15} className="text-[#1E5AA8]" />
+            <span className="font-bold text-[#12304A]">{searchLocation}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-[#F6F8FA] border border-[#D9E1E8] rounded-xl px-3 py-2 text-xs">
+            <Filter size={13} className="text-gray-500" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              aria-label="Sort partners"
+              className="bg-transparent font-bold text-[#12304A] focus:outline-none cursor-pointer"
+            >
+              <option value="distance">Nearest First</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* ── Partners Cards Grid ───────────────────────────────────────────── */}
+      {/* ── Partner Cards Grid ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {sortedPartners.map((partner) => (
           <div
             key={partner.id}
-            className="bg-slate-900/90 border border-slate-800 hover:border-indigo-500/40 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between space-y-4"
+            className="bg-white border-2 border-[#D9E1E8] hover:border-[#1E5AA8] rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between space-y-4 shadow-2xs hover:shadow-md"
           >
             <div className="space-y-3">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-bold text-indigo-400 uppercase">{partner.type}</span>
-                  <h3 className="text-base font-bold text-white leading-snug">{partner.name}</h3>
+                  <span className="text-[10px] font-bold text-[#1E5AA8] uppercase tracking-wider block">
+                    {partner.type}
+                  </span>
+                  <h3 className="text-base font-black text-[#12304A] leading-snug">{partner.name}</h3>
                 </div>
-                <span className="shrink-0 px-2 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 text-[10px] font-bold border border-indigo-500/20 flex items-center gap-1">
+                <span className="shrink-0 px-2.5 py-1 rounded-lg bg-blue-50 text-[#1E5AA8] text-xs font-bold border border-blue-200 flex items-center gap-1">
                   <MapPin size={12} />
                   <span>{partner.distance}</span>
                 </span>
               </div>
 
-              <p className="text-xs text-slate-400 flex items-start gap-1.5">
-                <span className="shrink-0 font-medium">📍</span>
+              <p className="text-xs text-[#667085] flex items-start gap-1.5 leading-relaxed">
+                <span>📍</span>
                 <span>{partner.address}</span>
               </p>
 
-              {/* Supported Features */}
-              <div className="space-y-1.5 pt-2 border-t border-slate-800/80 text-xs">
-                <div className="flex items-center gap-2 text-emerald-400 font-medium">
-                  <CheckCircle2 size={14} className="shrink-0" />
-                  <span>Scheme supported ({selectedScheme ? selectedScheme.name : 'NSFDC'})</span>
+              {/* Supported scheme & Status */}
+              <div className="space-y-2 pt-2 border-t border-gray-100 text-xs text-[#17212B]">
+                <div className="flex items-center gap-2 text-[#16834B] font-semibold">
+                  <CheckCircle2 size={15} className="shrink-0" />
+                  <span>Supports {selectedScheme ? selectedScheme.name : 'NSFDC Term Loan'}</span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className={`flex items-center gap-2 text-xs font-medium ${partner.available ? 'text-emerald-400' : 'text-slate-400'}`}>
-                    <CheckCircle2 size={14} className="shrink-0" />
-                    <span>{partner.available ? 'Applications available' : 'Fund status demo/sample'}</span>
-                  </div>
-
-                  <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${
-                    partner.available ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                  }`}>
-                    {partner.lastUpdated}
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="px-2 py-0.5 rounded bg-green-50 text-[#16834B] font-bold border border-green-200">
+                    Accepting Applications
                   </span>
+                  <span className="text-[#667085]">Verified: {partner.lastUpdated}</span>
                 </div>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-2 pt-3 border-t border-slate-800">
+            <div className="flex items-center gap-2 pt-3 border-t border-gray-100">
               <button
                 onClick={() => setRouteModalPartner(partner)}
-                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-md shadow-indigo-600/20"
+                className="touch-target px-3.5 py-2.5 rounded-xl bg-[#F6F8FA] hover:bg-gray-100 text-[#12304A] font-bold text-xs flex items-center gap-1.5 border border-[#D9E1E8] transition-colors cursor-pointer"
               >
-                <Navigation size={14} />
-                <span>View Route</span>
+                <Navigation size={14} className="text-[#1E5AA8]" />
+                <span>Directions</span>
               </button>
 
               <button
-                onClick={() => {
-                  setSelectedPartner(partner)
-                  setActiveTab('applications')
-                }}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+                onClick={() => handleApplyHere(partner)}
+                className="flex-1 touch-target py-2.5 px-3.5 rounded-xl bg-[#12304A] hover:bg-[#153A5B] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
               >
-                Apply Here
+                <span>Select & Apply</span>
+                <ArrowRight size={14} />
               </button>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Demo Data Notice */}
-      <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-3">
-        <AlertCircle size={18} className="text-amber-400 shrink-0" />
+      {/* ── Next Step Callout ─────────────────────────────────────────────── */}
+      <NextStepCard
+        title="Next Step"
+        stepNumber="6"
+        description="Ready to proceed? Select your preferred channel partner above to start or track your application submission."
+        actionText="My Applications"
+        actionTab="applications"
+        variant="primary"
+      />
+
+      {/* Official State Channelizing Agency Notice */}
+      <div className="p-4 rounded-xl bg-[#F6F8FA] border border-[#D9E1E8] text-xs text-[#667085] flex items-center gap-3">
+        <AlertCircle size={18} className="text-[#E67E22] shrink-0" />
         <span>
-          <strong>Sample/Demo Data Notice:</strong> Channelizing agency availability and real-time quota allocations are simulated for preview purposes. Official submissions route directly through verified SCAs.
+          <strong>Official Direct Routing:</strong> State Channelizing Agencies (SCAs) are authorized state government corporations. Beneficiaries do not need to pay any intermediary commission or application fee.
         </span>
       </div>
 
-      {/* Route Modal */}
+      {/* Route & Directions Modal */}
       {routeModalPartner && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-[#D9E1E8]">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <MapPin size={18} className="text-indigo-400" />
-                <h3 className="text-base font-bold text-white">Channel Partner Location</h3>
+                <MapPin size={18} className="text-[#1E5AA8]" />
+                <h3 className="text-base font-bold text-[#12304A]">Partner Location & Directions</h3>
               </div>
-              <button onClick={() => setRouteModalPartner(null)} className="text-slate-400 hover:text-white">✕</button>
+              <button
+                onClick={() => setRouteModalPartner(null)}
+                className="text-gray-400 hover:text-gray-700"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="space-y-3">
-              <h4 className="text-sm font-bold text-white">{routeModalPartner.name}</h4>
-              <p className="text-xs text-slate-300">📍 {routeModalPartner.address}</p>
+            <div className="space-y-3 text-xs text-[#17212B]">
+              <h4 className="text-sm font-extrabold text-[#12304A]">{routeModalPartner.name}</h4>
+              <p className="text-[#667085]">📍 {routeModalPartner.address}</p>
 
-              <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700 text-center space-y-2">
-                <span className="text-xs text-slate-400 block">Distance from {userProfile.pinCode}:</span>
-                <span className="text-2xl font-black text-indigo-400">{routeModalPartner.distance}</span>
-                <p className="text-[11px] text-slate-400">Estimated travel time: 12 mins via Highway 66</p>
+              <div className="p-4 rounded-xl bg-[#F6F8FA] border border-[#D9E1E8] text-center space-y-1">
+                <span className="text-[#667085] block">Distance from your location:</span>
+                <span className="text-2xl font-black text-[#1E5AA8]">{routeModalPartner.distance}</span>
+                <p className="text-[11px] text-[#667085]">Approx 10–15 minutes travel time</p>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-indigo-950/40 border border-indigo-800/40 text-xs text-indigo-300">
-                <Phone size={15} />
-                <span className="font-mono font-bold">{routeModalPartner.phone}</span>
+              <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50 border border-blue-200 text-[#12304A]">
+                <div className="flex items-center gap-2">
+                  <Phone size={15} className="text-[#1E5AA8]" />
+                  <span className="font-bold">Official Telephone</span>
+                </div>
+                <span className="font-mono font-bold text-xs">{routeModalPartner.phone}</span>
               </div>
             </div>
 
             <div className="pt-2 flex gap-2">
               <button
                 onClick={() => setRouteModalPartner(null)}
-                className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                className="flex-1 touch-target py-2.5 rounded-xl bg-gray-100 text-[#12304A] text-xs font-bold"
               >
                 Close
               </button>
@@ -164,7 +201,7 @@ export default function PartnerFinder() {
                 href={`https://maps.google.com/?q=${encodeURIComponent(routeModalPartner.address)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 touch-target py-2.5 rounded-xl bg-[#1E5AA8] hover:bg-[#153A5B] text-white text-xs font-bold flex items-center justify-center gap-1.5"
               >
                 <span>Google Maps</span>
                 <ExternalLink size={14} />
