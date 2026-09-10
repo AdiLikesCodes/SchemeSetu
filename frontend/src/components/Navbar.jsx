@@ -38,33 +38,12 @@ export default function Navbar() {
     language,
     setLanguage,
     logoutUser,
-    simpleMode,
-    toggleSimpleMode,
-    fontSize,
-    setFontSize,
   } = useChatStore()
 
   const [langMenuOpen, setLangMenuOpen] = useState(false)
-  const [accessMenuOpen, setAccessMenuOpen] = useState(false)
 
   const isAuthenticated = Boolean(userProfile?.isAuthenticated)
   const isAdmin = userProfile?.role === 'admin'
-
-  // Text size toggling
-  const cycleFontSize = () => {
-    if (fontSize === 'normal') {
-      setFontSize('large')
-      document.body.classList.remove('font-size-xlarge')
-      document.body.classList.add('font-size-large')
-    } else if (fontSize === 'large') {
-      setFontSize('xlarge')
-      document.body.classList.remove('font-size-large')
-      document.body.classList.add('font-size-xlarge')
-    } else {
-      setFontSize('normal')
-      document.body.classList.remove('font-size-large', 'font-size-xlarge')
-    }
-  }
 
   // Read page header aloud for citizen with low literacy
   const handleReadAloud = () => {
@@ -122,54 +101,54 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Center: Desktop Navigation Links (Citizen friendly) */}
-        <nav className="hidden xl:flex items-center gap-1 text-xs font-bold text-[#17212B]">
+        {/* Center: Desktop Navigation Links */}
+        <nav className="hidden lg:flex items-center gap-1 text-sm font-semibold text-[#17212B]">
           <button
             onClick={() => setActiveTab(isAuthenticated ? 'dashboard' : 'landing')}
-            className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               activeTab === 'landing' || activeTab === 'dashboard'
-                ? 'text-[#1E5AA8] bg-blue-50'
-                : 'hover:bg-gray-100 text-[#17212B]'
+                ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                : 'hover:bg-gray-100 text-[#475467]'
             }`}
           >
             Home
           </button>
           <button
             onClick={() => setActiveTab('ai-onboarding')}
-            className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               activeTab === 'ai-onboarding'
-                ? 'text-[#1E5AA8] bg-blue-50'
-                : 'hover:bg-gray-100 text-[#17212B]'
+                ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                : 'hover:bg-gray-100 text-[#475467]'
             }`}
           >
             Find Help
           </button>
           <button
             onClick={() => setActiveTab('scheme-results')}
-            className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               activeTab === 'scheme-results' || activeTab === 'scheme-details'
-                ? 'text-[#1E5AA8] bg-blue-50'
-                : 'hover:bg-gray-100 text-[#17212B]'
+                ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                : 'hover:bg-gray-100 text-[#475467]'
             }`}
           >
             Find Schemes
           </button>
           <button
             onClick={() => setActiveTab('calculator')}
-            className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               activeTab === 'calculator'
-                ? 'text-[#1E5AA8] bg-blue-50'
-                : 'hover:bg-gray-100 text-[#17212B]'
+                ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                : 'hover:bg-gray-100 text-[#475467]'
             }`}
           >
             Loan Calculator
           </button>
           <button
             onClick={() => setActiveTab('partner-finder')}
-            className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
               activeTab === 'partner-finder'
-                ? 'text-[#1E5AA8] bg-blue-50'
-                : 'hover:bg-gray-100 text-[#17212B]'
+                ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                : 'hover:bg-gray-100 text-[#475467]'
             }`}
           >
             Where to Apply
@@ -177,10 +156,10 @@ export default function Navbar() {
           {isAuthenticated && (
             <button
               onClick={() => setActiveTab('applications')}
-              className={`px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 activeTab === 'applications'
-                  ? 'text-[#1E5AA8] bg-blue-50'
-                  : 'hover:bg-gray-100 text-[#17212B]'
+                  ? 'text-[#1E5AA8] bg-blue-50 font-bold'
+                  : 'hover:bg-gray-100 text-[#475467]'
               }`}
             >
               My Applications
@@ -188,46 +167,23 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* Right Controls: Accessibility, Language, Auth */}
+        {/* Right Controls: Read Aloud, Language, Auth */}
         <div className="flex items-center gap-2">
-          {/* Simple Mode Switcher (ON by default) */}
-          <button
-            onClick={toggleSimpleMode}
-            className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-              simpleMode
-                ? 'bg-green-50 text-[#16834B] border-green-200'
-                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-            }`}
-            title="Toggle between simple citizen mode and detailed view"
-          >
-            <span className={`w-2 h-2 rounded-full ${simpleMode ? 'bg-[#16834B]' : 'bg-gray-400'}`} />
-            <span>{simpleMode ? 'Simple View: ON' : 'Detailed View'}</span>
-          </button>
-
           {/* Read Aloud Button */}
           <button
             onClick={handleReadAloud}
-            className="p-2 rounded-lg text-[#12304A] hover:bg-gray-100 border border-gray-200 transition-colors"
+            className="p-2 rounded-lg text-gray-600 hover:text-[#1E5AA8] hover:bg-gray-100 transition-colors cursor-pointer"
             title="Listen to page aloud"
             aria-label="Read aloud"
           >
-            <Volume2 size={16} className="text-[#1E5AA8]" />
-          </button>
-
-          {/* Text Size Control */}
-          <button
-            onClick={cycleFontSize}
-            className="px-2 py-1.5 rounded-lg text-xs font-extrabold text-[#12304A] hover:bg-gray-100 border border-gray-200 transition-colors"
-            title="Adjust text size (Normal / Large / Extra Large)"
-          >
-            <span>{fontSize === 'normal' ? 'A' : fontSize === 'large' ? 'A+' : 'A++'}</span>
+            <Volume2 size={18} />
           </button>
 
           {/* Language Selector */}
           <div className="relative">
             <button
               onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center gap-1.5 text-xs text-[#12304A] font-bold py-1.5 px-2.5 rounded-lg border border-[#D9E1E8] bg-white hover:bg-gray-50 transition-colors touch-target"
+              className="flex items-center gap-1.5 text-xs text-[#12304A] font-semibold py-1.5 px-2.5 rounded-lg border border-[#D9E1E8] bg-white hover:bg-gray-50 transition-colors"
               aria-label="Select language"
             >
               <Globe size={14} className="text-[#1E5AA8]" />
@@ -246,8 +202,8 @@ export default function Navbar() {
                       setLanguage(lang.code)
                       setLangMenuOpen(false)
                     }}
-                    className={`w-full text-left px-3.5 py-2.5 hover:bg-blue-50 transition-colors ${
-                      language === lang.code ? 'font-extrabold text-[#1E5AA8] bg-blue-50/60' : 'text-[#17212B]'
+                    className={`w-full text-left px-3.5 py-2 hover:bg-blue-50 transition-colors ${
+                      language === lang.code ? 'font-bold text-[#1E5AA8] bg-blue-50/60' : 'text-[#17212B]'
                     }`}
                   >
                     {lang.label}
@@ -259,12 +215,13 @@ export default function Navbar() {
 
           {/* User Profile or Sign In */}
           {isAuthenticated ? (
-            <div className="flex items-center gap-2 pl-2 border-l border-[#D9E1E8]">
+            <div className="flex items-center gap-1.5 pl-2 border-l border-[#D9E1E8]">
               <button
                 onClick={() => setActiveTab('profile')}
-                className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-gray-100 transition-colors text-left"
+                title="View Profile"
               >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs ${
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-xs ${
                   isAdmin ? 'bg-[#E67E22]' : 'bg-[#12304A]'
                 }`}>
                   {userProfile?.name ? userProfile.name.charAt(0).toUpperCase() : 'U'}
@@ -277,7 +234,7 @@ export default function Navbar() {
               <button
                 onClick={logoutUser}
                 title="Sign Out"
-                className="p-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 aria-label="Sign out"
               >
                 <LogOut size={16} />
@@ -286,7 +243,7 @@ export default function Navbar() {
           ) : (
             <button
               onClick={() => setActiveTab('auth')}
-              className="touch-target px-3.5 py-2 rounded-lg text-white text-xs font-bold flex items-center gap-1.5 bg-[#12304A] hover:bg-[#153A5B] transition-colors shadow-xs cursor-pointer"
+              className="px-3.5 py-2 rounded-lg text-white text-xs font-bold flex items-center gap-1.5 bg-[#12304A] hover:bg-[#153A5B] transition-colors shadow-xs cursor-pointer"
             >
               <ShieldCheck size={14} />
               <span>Sign In</span>
