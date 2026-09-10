@@ -15,6 +15,7 @@ import Applications from './pages/Applications'
 import Profile from './pages/Profile'
 import AdminDashboard from './pages/AdminDashboard'
 import Auth from './pages/Auth'
+import WhatsAppButton from './components/WhatsAppButton'
 import { ShieldX } from 'lucide-react'
 
 // ── Role-guard: shown when a non-admin tries to reach /admin ──────────────────
@@ -129,6 +130,9 @@ export default function App() {
 
       {/* Mobile Navigation Bar */}
       <MobileNav />
+
+      {/* Floating WhatsApp Quick Connect Button */}
+      <WhatsAppButton />
     </div>
   )
 }
