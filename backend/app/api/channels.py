@@ -38,6 +38,36 @@ async def get_or_create_channel_session(channel: str, external_user_id: str) -> 
     await channel_session_repository.upsert_mapping(new_mapping)
     return new_session_id
 
+@router.get("/status")
+async def get_channels_status():
+    """
+    Returns configured status for each access channel.
+    """
+    whatsapp_configured = bool(
+        settings.WHATSAPP_ACCESS_TOKEN and settings.WHATSAPP_PHONE_NUMBER_ID
+    )
+    voice_configured = bool(
+        settings.GOOGLE_APPLICATION_CREDENTIALS or settings.GOOGLE_SPEECH_API_KEY
+    )
+    return {
+        "whatsapp": {
+            "configured": whatsapp_configured,
+            "provider": "meta",
+            "phone_number_id": settings.WHATSAPP_PHONE_NUMBER_ID if whatsapp_configured else None,
+            "api_version": settings.WHATSAPP_API_VERSION,
+        },
+        "voice": {
+            "configured": voice_configured,
+            "provider": "google",
+            "stt_language": settings.SPEECH_TO_TEXT_LANGUAGE,
+            "tts_language": settings.TEXT_TO_SPEECH_LANGUAGE,
+        },
+        "web": {
+            "configured": True,
+            "provider": "fastapi"
+        }
+    }
+
 @router.get("/whatsapp/webhook")
 async def verify_whatsapp_webhook(
     hub_mode: str = Query(None, alias="hub.mode"),

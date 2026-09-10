@@ -17,9 +17,11 @@ import {
   Building2,
   Calculator,
   User,
-  Bot
+  Bot,
+  AlertCircle
 } from 'lucide-react'
 import useChatStore from '../store/chatStore'
+import { getChannelsStatus } from '../api/client'
 
 const QUICK_SUGGESTIONS = [
   'What schemes are available for SC entrepreneurs?',
@@ -34,6 +36,10 @@ export default function ChatWidget() {
   const [isListening, setIsListening] = useState(false)
   const [speakingMsgId, setSpeakingMsgId] = useState(null)
   const [channelMode, setChannelMode] = useState('chat') // 'chat' | 'whatsapp'
+  const [channelStatus, setChannelStatus] = useState({
+    whatsapp: { configured: false },
+    voice: { configured: false }
+  })
 
   const {
     messages,
@@ -41,7 +47,6 @@ export default function ChatWidget() {
     isLoading,
     resetChat,
     language,
-    setLanguage,
     setActiveTab,
     selectedScheme,
     userProfile
@@ -49,6 +54,13 @@ export default function ChatWidget() {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Fetch live channel statuses
+  useEffect(() => {
+    getChannelsStatus()
+      .then((data) => setChannelStatus(data))
+      .catch(() => {})
+  }, [])
 
   // Scroll to bottom whenever messages update or modal opens
   useEffect(() => {
@@ -126,13 +138,17 @@ export default function ChatWidget() {
     window.speechSynthesis.speak(utterance)
   }
 
-  const rawNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210'
-  const displayPhone = import.meta.env.VITE_WHATSAPP_DISPLAY_NUMBER || '+91 98765 43210'
-  const waLink = `https://wa.me/${rawNumber.replace(/\D/g, '')}?text=${encodeURIComponent(
-    selectedScheme
-      ? `Namaste! I want to inquire about ${selectedScheme.name}`
-      : 'Namaste! I would like to check my government scheme eligibility.'
-  )}`
+  const configuredNumber = import.meta.env.VITE_WHATSAPP_BUSINESS_NUMBER || ''
+  const displayPhone = import.meta.env.VITE_WHATSAPP_DISPLAY_NUMBER || (configuredNumber ? `+${configuredNumber}` : '')
+  const hasRealWhatsApp = Boolean(configuredNumber && configuredNumber.trim().length >= 10)
+
+  const waLink = hasRealWhatsApp
+    ? `https://wa.me/${configuredNumber.replace(/\D/g, '')}?text=${encodeURIComponent(
+        selectedScheme
+          ? `Namaste! I want to inquire about ${selectedScheme.name}`
+          : 'Namaste! I would like to check my government scheme eligibility.'
+      )}`
+    : null
 
   return (
     <>
@@ -173,7 +189,7 @@ export default function ChatWidget() {
                   <h3 className="font-extrabold text-xs text-white">SchemeSetu Assistant</h3>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 </div>
-                <p className="text-[10px] text-blue-200">MoSJE Deterministic AI Core</p>
+                <p className="text-[10px] text-blue-200">Two-Tier Decision Core</p>
               </div>
             </div>
 
@@ -219,8 +235,12 @@ export default function ChatWidget() {
                   : 'border-transparent text-[#667085] hover:text-emerald-700'
               }`}
             >
-              <span>WhatsApp Mode</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>WhatsApp</span>
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  channelStatus.whatsapp?.configured ? 'bg-emerald-500' : 'bg-amber-500'
+                }`}
+              />
             </button>
           </div>
 
@@ -238,7 +258,7 @@ export default function ChatWidget() {
                         <span>Namaste! How can I assist you today?</span>
                       </div>
                       <p className="text-[#667085] text-[11px] leading-relaxed">
-                        I can help you check eligibility for MoSJE concessional loans, calculate EMIs, or find your nearest authorized State Channelizing Agency.
+                        I can help you check eligibility for concessional government schemes, calculate loan EMIs, and locate your nearest authorized application centre.
                       </p>
                     </div>
 
@@ -313,20 +333,6 @@ export default function ChatWidget() {
                         <div className="text-[12px] leading-relaxed whitespace-pre-wrap">
                           {msg.content}
                         </div>
-
-                        {/* Extracted Profile tags if available */}
-                        {msg.data?.extracted_entities && Object.keys(msg.data.extracted_entities).length > 0 && (
-                          <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-1">
-                            {Object.entries(msg.data.extracted_entities).map(([k, v]) => (
-                              <span
-                                key={k}
-                                className="px-1.5 py-0.5 rounded-md bg-blue-50 text-[#1E5AA8] border border-blue-200 text-[10px] font-bold"
-                              >
-                                {k}: {String(v)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )
@@ -385,7 +391,7 @@ export default function ChatWidget() {
                 <div className="flex items-center justify-between text-[10px] text-[#667085] px-1">
                   <div className="flex items-center gap-1">
                     <ShieldCheck size={12} className="text-emerald-600" />
-                    <span>DPDP Act 2023 Compliant (Zero PII stored)</span>
+                    <span>Privacy-aware • Designed for data minimization</span>
                   </div>
                   <button
                     type="button"
@@ -395,7 +401,7 @@ export default function ChatWidget() {
                     }}
                     className="text-[#1E5AA8] hover:underline font-bold"
                   >
-                    Full Screen Mode →
+                    Guided Wizard →
                   </button>
                 </div>
               </form>
@@ -404,27 +410,41 @@ export default function ChatWidget() {
             /* ── WhatsApp Integration Tab ── */
             <div className="flex-1 p-5 overflow-y-auto space-y-4 text-xs bg-[#F8FAFC]">
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
-                <div className="flex items-center gap-2 text-emerald-900 font-bold">
-                  <span className="text-base">📱</span>
-                  <span className="text-xs">Access via Official WhatsApp Assistant</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-900 font-bold">
+                    <span className="text-base">📱</span>
+                    <span className="text-xs">WhatsApp Assistant</span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      channelStatus.whatsapp?.configured
+                        ? 'bg-emerald-200 text-emerald-900'
+                        : 'bg-amber-100 text-amber-900 border border-amber-300'
+                    }`}
+                  >
+                    {channelStatus.whatsapp?.configured ? 'Connected' : 'Setup Required'}
+                  </span>
                 </div>
                 <p className="text-[11px] text-emerald-800 leading-relaxed">
-                  Citizens can seamlessly talk or text with SchemeSetu on WhatsApp in Hindi, English, and regional languages.
+                  Zero installation needed. Access the same deterministic eligibility engine, financial simulation, and partner routing via WhatsApp.
                 </p>
               </div>
 
+              {/* Status & Details */}
               <div className="space-y-2">
                 <span className="text-[11px] font-bold text-[#12304A] uppercase tracking-wide">
-                  Official MoSJE Channel Details:
+                  Channel Details:
                 </span>
                 <div className="p-3.5 rounded-xl bg-white border border-[#D9E1E8] space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-[#667085]">Dedicated Bot Number:</span>
-                    <span className="font-mono font-bold text-[#12304A]">{displayPhone}</span>
+                    <span className="text-[#667085]">WhatsApp Business Number:</span>
+                    <span className="font-mono font-bold text-[#12304A]">
+                      {hasRealWhatsApp ? displayPhone : 'Not configured in environment'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[#667085]">Response Time:</span>
-                    <span className="font-bold text-emerald-600">Instant (24x7)</span>
+                    <span className="text-[#667085]">Deterministic Engine:</span>
+                    <span className="font-bold text-emerald-600">Active</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[#667085]">Voice Notes:</span>
@@ -433,20 +453,29 @@ export default function ChatWidget() {
                 </div>
               </div>
 
-              {/* Direct Link */}
+              {/* Action */}
               <div className="pt-2 space-y-2">
-                <a
-                  href={waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-                >
-                  <span>Open WhatsApp Web / App</span>
-                  <ExternalLink size={14} />
-                </a>
-                <p className="text-[10px] text-center text-[#667085]">
-                  Note: On dev environments without an active Meta Business SIM, use the built-in <strong>Web AI Chat</strong> tab above.
-                </p>
+                {hasRealWhatsApp ? (
+                  <a
+                    href={waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                  >
+                    <span>Open in WhatsApp</span>
+                    <ExternalLink size={14} />
+                  </a>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-amber-900 space-y-1.5">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <AlertCircle size={14} className="text-amber-700" />
+                      <span>WhatsApp Number Unset</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Set <code className="bg-amber-100 px-1 rounded font-mono text-[10px]">VITE_WHATSAPP_BUSINESS_NUMBER</code> in <code className="font-mono text-[10px]">frontend/.env</code> with your verified Meta WhatsApp Business Platform number to enable direct links.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}

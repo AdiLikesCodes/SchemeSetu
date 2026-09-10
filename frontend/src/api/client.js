@@ -315,10 +315,17 @@ export async function getConsentStatus(sessionId, consentType = 'global') {
   return res.json()
 }
 
-// ── Live Partner Fetch ───────────────────────────────────────────────────────
-
 export async function fetchAllPartners() {
   const res = await fetch(`${API_BASE}/partners`)
   if (!res.ok) throw new Error('Failed to fetch partners')
   return res.json()
 }
+
+// ── Channels Status ─────────────────────────────────────────────────────────
+
+export async function getChannelsStatus() {
+  const res = await fetch(`${API_BASE}/channels/status`)
+  if (!res.ok) throw new Error('Failed to fetch channels status')
+  return res.json()
+}
+
