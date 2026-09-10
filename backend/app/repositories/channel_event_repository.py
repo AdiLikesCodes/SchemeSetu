@@ -19,11 +19,14 @@ class ChannelEventRepository:
                 unique=True
             )
 
-    async def claim_event(self, provider: str, channel: str, external_event_id: str) -> Optional[ChannelEvent]:
+    async def claim_event(self, provider: str, channel: str, external_event_id: str, allow_failed_retry: bool = True) -> Optional[ChannelEvent]:
         """
         Atomically claims an incoming webhook event.
-        Returns the ChannelEvent if successfully claimed (inserted).
-        Returns None if already claimed (duplicate).
+        - If new: Inserts with status 'RECEIVED' and returns ChannelEvent.
+        - If already exists and status == 'FAILED' and allow_failed_retry is True:
+            Atomically transitions status from 'FAILED' -> 'PROCESSING' and returns ChannelEvent.
+        - If already claimed and status in ('RECEIVED', 'PROCESSING', 'PROCESSED'):
+            Returns None to prevent duplicate execution.
         """
         db = get_database()
         if db is None:
@@ -34,13 +37,33 @@ class ChannelEventRepository:
             provider=provider,
             channel=channel,
             external_event_id=external_event_id,
-            received_at=datetime.now(timezone.utc)
+            received_at=datetime.now(timezone.utc),
+            status="RECEIVED"
         )
 
         try:
             await db[self.collection_name].insert_one(event.model_dump(mode="json"))
             return event
         except DuplicateKeyError:
+            if allow_failed_retry:
+                # Atomically claim if in FAILED state
+                result = await db[self.collection_name].find_one_and_update(
+                    {
+                        "provider": provider,
+                        "external_event_id": external_event_id,
+                        "status": "FAILED"
+                    },
+                    {
+                        "$set": {
+                            "status": "PROCESSING",
+                            "received_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    },
+                    return_document=True
+                )
+                if result:
+                    result.pop("_id", None)
+                    return ChannelEvent.model_validate(result)
             return None
         except Exception as err:
             logger.warning("Error claiming event %s/%s: %s", provider, external_event_id, err)

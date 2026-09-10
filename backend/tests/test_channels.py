@@ -2,6 +2,7 @@ import pytest
 import hashlib
 import hmac
 import json
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, AsyncMock
 from fastapi.testclient import TestClient
 
@@ -12,6 +13,7 @@ from app.repositories.channel_event_repository import channel_event_repository
 from app.repositories.channel_session_repository import channel_session_repository
 from app.models.channel_event import ChannelEvent
 from app.models.channel_session import ChannelSession
+from app.models.user import UserSession, UserProfile
 from app.channels.schemas import IncomingMessage, OutgoingMessage
 
 client = TestClient(app)
@@ -43,13 +45,38 @@ def get_whatsapp_payload(message_id="wamid.123", sender="16315551234", text="Hel
     }
 
 @pytest.mark.asyncio
+async def test_whatsapp_webhook_verification_handshake():
+    """Test Meta webhook subscription verification GET request with hub.challenge."""
+    with patch.object(settings, "WHATSAPP_VERIFY_TOKEN", "my_verify_token"):
+        # Correct token
+        res_ok = client.get(
+            "/api/v1/channels/whatsapp/webhook",
+            params={
+                "hub.mode": "subscribe",
+                "hub.challenge": "1158201444",
+                "hub.verify_token": "my_verify_token"
+            }
+        )
+        assert res_ok.status_code == 200
+        assert res_ok.text == "1158201444"
+
+        # Invalid token
+        res_fail = client.get(
+            "/api/v1/channels/whatsapp/webhook",
+            params={
+                "hub.mode": "subscribe",
+                "hub.challenge": "1158201444",
+                "hub.verify_token": "wrong_token"
+            }
+        )
+        assert res_fail.status_code == 403
+
+@pytest.mark.asyncio
 async def test_whatsapp_signature_validation(mock_whatsapp_secret):
     payload = json.dumps(get_whatsapp_payload())
     sig = generate_signature(mock_whatsapp_secret, payload)
     
-    with patch("app.channels.whatsapp.adapter.getattr") as mock_getattr:
-        mock_getattr.return_value = mock_whatsapp_secret
-        
+    with patch.object(settings, "WHATSAPP_APP_SECRET", mock_whatsapp_secret):
         # Direct method test
         assert whatsapp_adapter.verify_webhook(sig, payload.encode()) == True
         
@@ -71,8 +98,7 @@ async def test_webhook_idempotency_duplicate_suppression(mock_whatsapp_secret):
     payload = json.dumps(get_whatsapp_payload(message_id="wamid.dup"))
     sig = generate_signature(mock_whatsapp_secret, payload)
     
-    with patch("app.channels.whatsapp.adapter.getattr") as mock_getattr:
-        mock_getattr.return_value = mock_whatsapp_secret
+    with patch.object(settings, "WHATSAPP_APP_SECRET", mock_whatsapp_secret):
         with patch("app.api.channels.channel_event_repository.claim_event", new_callable=AsyncMock) as mock_claim:
             # First claim succeeds
             mock_claim.return_value = ChannelEvent(provider="whatsapp_meta", channel="whatsapp", external_event_id="wamid.dup")
@@ -99,8 +125,7 @@ async def test_failed_webhook_retry_semantics(mock_whatsapp_secret):
     payload = json.dumps(get_whatsapp_payload(message_id="wamid.fail"))
     sig = generate_signature(mock_whatsapp_secret, payload)
     
-    with patch("app.channels.whatsapp.adapter.getattr") as mock_getattr:
-        mock_getattr.return_value = mock_whatsapp_secret
+    with patch.object(settings, "WHATSAPP_APP_SECRET", mock_whatsapp_secret):
         with patch("app.api.channels.channel_event_repository.claim_event", new_callable=AsyncMock) as mock_claim:
             mock_claim.return_value = ChannelEvent(provider="whatsapp_meta", channel="whatsapp", external_event_id="wamid.fail")
             
@@ -116,28 +141,46 @@ async def test_failed_webhook_retry_semantics(mock_whatsapp_secret):
                     mock_update.assert_any_call("whatsapp_meta", "wamid.fail", "FAILED")
 
 @pytest.mark.asyncio
-async def test_session_resumption():
+async def test_session_resumption_and_expiration():
     from app.api.channels import get_or_create_channel_session
     
-    with patch("app.api.channels.channel_session_repository.get_mapping", new_callable=AsyncMock) as mock_get:
-        with patch("app.api.channels.channel_session_repository.upsert_mapping", new_callable=AsyncMock) as mock_upsert:
-            
-            # 1. No existing mapping
-            mock_get.return_value = None
-            sess_id_1 = await get_or_create_channel_session("whatsapp", "user1")
-            assert sess_id_1.startswith("sess_")
-            mock_upsert.assert_called_once()
-            
-            # 2. Existing mapping (resumption)
-            mock_get.return_value = ChannelSession(channel="whatsapp", external_user_id="user1", session_id=sess_id_1)
-            sess_id_2 = await get_or_create_channel_session("whatsapp", "user1")
-            assert sess_id_1 == sess_id_2
+    with patch("app.api.channels.channel_session_repository.get_mapping", new_callable=AsyncMock) as mock_get_mapping:
+        with patch("app.api.channels.channel_session_repository.upsert_mapping", new_callable=AsyncMock) as mock_upsert_mapping:
+            with patch("app.api.channels.session_repository.get_session", new_callable=AsyncMock) as mock_get_session:
+                
+                # 1. No existing mapping -> creates new session
+                mock_get_mapping.return_value = None
+                sess_id_1 = await get_or_create_channel_session("whatsapp", "user1")
+                assert sess_id_1.startswith("sess_")
+                mock_upsert_mapping.assert_called_once()
+                
+                # 2. Existing mapping with unexpired session -> resumes same session
+                mock_get_mapping.return_value = ChannelSession(channel="whatsapp", external_user_id="user1", session_id=sess_id_1)
+                active_session = UserSession(
+                    session_id=sess_id_1,
+                    profile=UserProfile(),
+                    expires_at=datetime.now(timezone.utc) + timedelta(hours=10)
+                )
+                mock_get_session.return_value = active_session
+                sess_id_2 = await get_or_create_channel_session("whatsapp", "user1")
+                assert sess_id_1 == sess_id_2
+                
+                # 3. Existing mapping with expired session -> creates new session
+                expired_session = UserSession(
+                    session_id=sess_id_1,
+                    profile=UserProfile(),
+                    expires_at=datetime.now(timezone.utc) - timedelta(minutes=5)
+                )
+                mock_get_session.return_value = expired_session
+                sess_id_3 = await get_or_create_channel_session("whatsapp", "user1")
+                assert sess_id_3 != sess_id_1
+                assert sess_id_3.startswith("sess_")
 
 @pytest.mark.asyncio
 async def test_cross_channel_equivalence():
     """
     Test that web, whatsapp, and voice inputs map to exactly the same canonical IncomingMessage format
-    and execute identically.
+    and execute identically through ConversationService.
     """
     from app.channels.web import web_adapter
     from app.channels.whatsapp.adapter import whatsapp_adapter
@@ -166,8 +209,6 @@ async def test_cross_channel_equivalence():
     assert wa_incoming.channel == "whatsapp"
     assert voice_incoming.channel == "voice"
     
-    # For equivalent input, chat service should behave the same
-    # We test it directly with mock scheme results
     with patch("app.agent.conversation.check_all_schemes") as mock_check:
         mock_check.return_value = []
         with patch("app.agent.conversation.sanitize_text_pipeline", new_callable=AsyncMock) as mock_sanitize:
@@ -205,5 +246,5 @@ async def test_cross_channel_equivalence():
                 voice_incoming.session_id = "sess_cross"
                 out_voice, _ = await handle_chat_message(voice_incoming)
                 
-                # All should have same underlying response structure
+                # All channels receive equivalent deterministic response
                 assert out_web.text == out_wa.text == out_voice.text

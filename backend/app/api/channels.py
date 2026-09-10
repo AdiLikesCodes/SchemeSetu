@@ -14,11 +14,21 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/channels", tags=["Channels"])
 
+from datetime import datetime, timezone
+from app.repositories.session_repository import session_repository
+
 async def get_or_create_channel_session(channel: str, external_user_id: str) -> str:
     mapping = await channel_session_repository.get_mapping(channel, external_user_id)
     if mapping:
-        return mapping.session_id
-    
+        session = await session_repository.get_session(mapping.session_id)
+        if session:
+            now = datetime.now(timezone.utc)
+            expires_at = session.expires_at
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if expires_at > now:
+                return mapping.session_id
+
     new_session_id = f"sess_{uuid.uuid4().hex[:12]}"
     new_mapping = ChannelSession(
         channel=channel,
