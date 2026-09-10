@@ -280,3 +280,45 @@ export async function getAuditLogs() {
   return res.json()
 }
 
+// ── Consent (DPDP Act 2023 Compliance) ───────────────────────────────────────
+
+export async function grantConsent(sessionId, consentType = 'global') {
+  const res = await fetch(`${API_BASE}/consent/grant`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, consent_type: consentType }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Consent grant failed' }))
+    throw new Error(err.detail || 'Consent grant failed')
+  }
+  return res.json()
+}
+
+export async function withdrawConsent(sessionId, consentType = 'global') {
+  const res = await fetch(`${API_BASE}/consent/withdraw`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, consent_type: consentType }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Consent withdrawal failed' }))
+    throw new Error(err.detail || 'Consent withdrawal failed')
+  }
+  return res.json()
+}
+
+export async function getConsentStatus(sessionId, consentType = 'global') {
+  const params = new URLSearchParams({ session_id: sessionId, consent_type: consentType })
+  const res = await fetch(`${API_BASE}/consent/status?${params.toString()}`)
+  if (!res.ok) throw new Error('Failed to fetch consent status')
+  return res.json()
+}
+
+// ── Live Partner Fetch ───────────────────────────────────────────────────────
+
+export async function fetchAllPartners() {
+  const res = await fetch(`${API_BASE}/partners`)
+  if (!res.ok) throw new Error('Failed to fetch partners')
+  return res.json()
+}

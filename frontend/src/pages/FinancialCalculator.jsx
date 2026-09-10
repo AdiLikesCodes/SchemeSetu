@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
-import { Calculator, ArrowRight, AlertTriangle, Info, Landmark, HelpCircle } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Calculator, ArrowRight, AlertTriangle, Info, PieChart, Landmark, HelpCircle, Loader2, ServerCog } from 'lucide-react'
 import useChatStore from '../store/chatStore'
 import { TermExplainer } from '../components/PlainLanguageModal'
 import NextStepCard from '../components/NextStepCard'
 
 export default function FinancialCalculator() {
-  const { calculatorInput, updateCalculatorInput, selectedScheme, setActiveTab } = useChatStore()
+  const { calculatorInput, updateCalculatorInput, selectedScheme, setActiveTab, runFinancialSimulation, simulationResult, simulationLoading } = useChatStore()
 
   // State inputs
   const [loanAmount, setLoanAmount] = useState(calculatorInput.loanAmount || 300000)
@@ -237,6 +237,61 @@ export default function FinancialCalculator() {
               <span>Find Where to Apply</span>
               <ArrowRight size={15} />
             </button>
+
+            {selectedScheme && (
+              <button
+                onClick={() => runFinancialSimulation(selectedScheme.id, loanAmount)}
+                disabled={simulationLoading}
+                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors border border-slate-700"
+              >
+                {simulationLoading ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    <span>Running Simulation…</span>
+                  </>
+                ) : (
+                  <>
+                    <ServerCog size={14} />
+                    <span>Run Backend Simulation</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {simulationResult && (
+              <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-800/40 space-y-3">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
+                  <ServerCog size={14} />
+                  <span>Backend Deterministic Engine Result</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {simulationResult.emi_amount && (
+                    <div className="flex justify-between p-2 rounded-lg bg-slate-800/50">
+                      <span className="text-slate-400">EMI (Engine):</span>
+                      <span className="font-bold text-emerald-300">₹{simulationResult.emi_amount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {simulationResult.subsidy_amount != null && (
+                    <div className="flex justify-between p-2 rounded-lg bg-slate-800/50">
+                      <span className="text-slate-400">Subsidy:</span>
+                      <span className="font-bold text-emerald-300">₹{Number(simulationResult.subsidy_amount).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {simulationResult.margin_money != null && (
+                    <div className="flex justify-between p-2 rounded-lg bg-slate-800/50">
+                      <span className="text-slate-400">Margin Money:</span>
+                      <span className="font-bold text-amber-300">₹{Number(simulationResult.margin_money).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {simulationResult.total_repayment != null && (
+                    <div className="flex justify-between p-2 rounded-lg bg-slate-800/50">
+                      <span className="text-slate-400">Total Repayment:</span>
+                      <span className="font-bold text-white">₹{Number(simulationResult.total_repayment).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Institutional Disclaimer */}

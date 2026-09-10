@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { ShieldCheck, Lock, CheckCircle2 } from 'lucide-react'
+import { ShieldCheck, Lock, CheckCircle2, Loader2 } from 'lucide-react'
+import useChatStore from '../store/chatStore'
 
 export default function ConsentModal() {
   const [hasConsent, setHasConsent] = useState(true) // assume true to prevent flicker
   const [isVisible, setIsVisible] = useState(false)
+  const { grantConsent, consentLoading } = useChatStore()
 
   useEffect(() => {
     const consent = localStorage.getItem('schemesetu_consent')
@@ -13,7 +15,9 @@ export default function ConsentModal() {
     }
   }, [])
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
+    // Fire backend consent grant (non-blocking — we proceed locally regardless)
+    await grantConsent()
     localStorage.setItem('schemesetu_consent', 'true')
     setHasConsent(true)
     setTimeout(() => setIsVisible(false), 300) // fade out
@@ -64,9 +68,17 @@ export default function ConsentModal() {
         <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
           <button
             onClick={handleAccept}
-            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-colors"
+            disabled={consentLoading}
+            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-800 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2"
           >
-            I Understand & Agree
+            {consentLoading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Recording Consent…
+              </>
+            ) : (
+              'I Understand & Agree'
+            )}
           </button>
         </div>
       </div>

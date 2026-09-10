@@ -6,6 +6,7 @@ financial summaries, and partner recommendations.
 
 import logging
 from app.models.contracts import ChatRequest, ChatResponse
+from app.channels.schemas import IncomingMessage, OutgoingMessage
 from app.agent.conversation import handle_chat_message
 
 logger = logging.getLogger(__name__)
@@ -13,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 class ChatService:
     @staticmethod
-    async def process_chat_turn(request: ChatRequest) -> ChatResponse:
+    async def process_chat_turn(incoming: IncomingMessage) -> tuple[OutgoingMessage, ChatResponse]:
         """
-        Execute a conversational turn and return full ChatResponse contract.
+        Execute a conversational turn and return full ChatResponse contract along with OutgoingMessage.
         """
-        return await handle_chat_message(request)
+        return await handle_chat_message(incoming)
 
 
 chat_service = ChatService()

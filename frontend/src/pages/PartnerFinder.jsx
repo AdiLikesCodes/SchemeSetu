@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   MapPin,
   Navigation,
@@ -8,19 +8,24 @@ import {
   ExternalLink,
   Filter,
   Building2,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react'
 import useChatStore from '../store/chatStore'
 import { TermExplainer } from '../components/PlainLanguageModal'
 import NextStepCard from '../components/NextStepCard'
 
 export default function PartnerFinder() {
-  const { partners, selectedScheme, userProfile, setSelectedPartner, setActiveTab } = useChatStore()
-  const [sortBy, setSortBy] = useState('distance')
+  const { partners, partnersLoading, fetchLivePartners, selectedScheme, userProfile, setSelectedPartner, setActiveTab } = useChatStore()
+  const [sortBy, setSortBy] = useState('distance') // 'distance' | 'rating'
   const [routeModalPartner, setRouteModalPartner] = useState(null)
   const [selectedPartnerDetail, setSelectedPartnerDetail] = useState(null)
   const [searchLocation, setSearchLocation] = useState(`${userProfile.district || 'Thiruvananthapuram'}, ${userProfile.state || 'Kerala'}`)
 
+  // Fetch live partners from backend on mount
+  useEffect(() => {
+    fetchLivePartners(selectedScheme?.id || null)
+  }, [selectedScheme?.id])
   const sortedPartners = [...partners].sort((a, b) => {
     if (sortBy === 'distance') {
       return parseFloat(a.distance) - parseFloat(b.distance)

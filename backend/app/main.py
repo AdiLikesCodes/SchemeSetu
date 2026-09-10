@@ -29,10 +29,12 @@ from app.api.schemes import router as schemes_router
 from app.api.consent import router as consent_router
 from app.api.auth import router as auth_router
 from app.api.scraper_routes import router as scraper_router
+from app.api.channels import router as channels_router
 
 # Compatibility adapters
 from app.compatibility import compatibility_router
-
+from app.repositories.channel_session_repository import channel_session_repository
+from app.repositories.channel_event_repository import channel_event_repository
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -42,6 +44,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     Does NOT auto-seed schemes or partners.
     """
     await connect_to_mongo()
+    await channel_session_repository.create_indexes()
+    await channel_event_repository.create_indexes()
     # Non-blocking soft check for Gemini (logs warning if offline, does not crash)
     await gemini_agent.startup_check()
     yield
@@ -155,6 +159,7 @@ app.include_router(schemes_router, prefix="/api/v1")
 app.include_router(consent_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(auth_router)
+app.include_router(channels_router, prefix="/api/v1")
 
 # Scraper routes (under /api/admin and /api/v1/admin)
 app.include_router(scraper_router, prefix="/api/admin")
@@ -163,4 +168,5 @@ app.include_router(scraper_router, prefix="/api/v1/admin")
 # Compatibility adapters (under both /api/v1 and root for legacy callers)
 app.include_router(compatibility_router, prefix="/api/v1")
 app.include_router(compatibility_router)
+
 

@@ -9,6 +9,7 @@ from app.models.contracts import ChatRequest
 from app.agent.conversation import handle_chat_message
 from app.agent.sanitizer import contains_unredacted_pii
 from app.agent.gemini_client import gemini_agent
+from app.channels.web import web_adapter
 
 
 
@@ -28,7 +29,8 @@ async def _run_chat_and_capture_prompts(session_id: str, message: str) -> list[s
     with patch.object(gemini_agent, "api_key", "test_api_key_active"), \
          patch.object(gemini_agent, "_client", mock_client):
         req = ChatRequest(session_id=session_id, message=message, language="en")
-        await handle_chat_message(req)
+        incoming = await web_adapter.parse_event(req)
+        await handle_chat_message(incoming)
 
     return dispatched_prompts
 

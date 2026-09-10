@@ -64,6 +64,8 @@ async def test_legacy_admin_seed_with_auth_when_enabled():
 @pytest.mark.asyncio
 async def test_legacy_chat_adapter():
     """Verify /chat/{beneficiary_id} maps to chat_service and uses beneficiary_id as session correlation."""
+    from app.channels.schemas import OutgoingMessage
+
     fake_response = ChatResponse(
         session_id="ben_corr_999",
         response_text="We found several schemes matching your profile.",
@@ -83,9 +85,10 @@ async def test_legacy_chat_adapter():
         ],
     )
 
+    fake_outgoing = OutgoingMessage(text=fake_response.response_text, language="en")
 
     with patch("app.services.chat_service.chat_service.process_chat_turn", new_callable=AsyncMock) as mock_turn:
-        mock_turn.return_value = fake_response
+        mock_turn.return_value = (fake_outgoing, fake_response)
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
             response = await ac.post(

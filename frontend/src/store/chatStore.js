@@ -8,9 +8,13 @@ import {
   login as apiLogin,
   signup as apiSignup,
   updateUserProfile as apiUpdateProfile,
+  grantConsent as apiGrantConsent,
+  withdrawConsent as apiWithdrawConsent,
+  getConsentStatus as apiGetConsentStatus,
+  getNearestPartners as apiGetNearestPartners,
+  fetchAllPartners as apiFetchAllPartners,
+  simulateFinancials as apiSimulateFinancials,
 } from '../api/client'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
 
 const INITIAL_PROFILE = {
   name: '',
@@ -396,7 +400,7 @@ const useChatStore = create((set, get) => ({
   // ── Dynamic Scheme Ingestion from Backend ──────────────────────────────────
   fetchSchemesFromBackend: async () => {
     try {
-      const data = await apiGetSchemes()
+      const data = await getSchemes()
       if (Array.isArray(data) && data.length > 0) {
         const mappedSchemes = data.map((s) => ({
           id: s.scheme_id,
@@ -845,6 +849,83 @@ const useChatStore = create((set, get) => ({
       },
     }),
 
+  // ── Consent Actions ─────────────────────────────────────────────────────────
+  consentGranted: false,
+  consentLoading: false,
+
+  grantConsent: async () => {
+    const { sessionId } = get()
+    set({ consentLoading: true })
+    try {
+      await apiGrantConsent(sessionId || 'pending', 'global')
+      set({ consentGranted: true, consentLoading: false })
+    } catch (err) {
+      console.error('Consent grant failed:', err)
+      // Grant locally even if backend fails (consent modal should proceed)
+      set({ consentGranted: true, consentLoading: false })
+    }
+  },
+
+  withdrawConsent: async () => {
+    const { sessionId } = get()
+    try {
+      await apiWithdrawConsent(sessionId || 'pending', 'global')
+    } catch (err) {
+      console.error('Consent withdrawal failed:', err)
+    }
+    set({ consentGranted: false })
+  },
+
+  // ── Live Partner Fetching ───────────────────────────────────────────────────
+  partnersLoading: false,
+
+  fetchLivePartners: async (schemeId = null) => {
+    const { userProfile } = get()
+    const lat = userProfile.latitude || 26.8467
+    const lng = userProfile.longitude || 80.9462
+    set({ partnersLoading: true })
+    try {
+      const data = await apiGetNearestPartners(lat, lng, schemeId, 5)
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = data.map((p, i) => ({
+          id: p.partner_id || `p${i}`,
+          name: p.name,
+          type: p.type,
+          distance: p.distance_km ? `${p.distance_km.toFixed(1)} km away` : 'N/A',
+          address: p.address || '',
+          phone: p.phone || '',
+          supportedSchemes: p.schemes_served || [],
+          available: true,
+          lastUpdated: 'Live data',
+          rating: 4.5,
+        }))
+        set({ partners: mapped, partnersLoading: false })
+      } else {
+        set({ partnersLoading: false })
+      }
+    } catch (err) {
+      console.error('Failed to fetch live partners:', err)
+      set({ partnersLoading: false })
+    }
+  },
+
+  // ── Financial Simulation (Backend) ──────────────────────────────────────────
+  simulationResult: null,
+  simulationLoading: false,
+
+  runFinancialSimulation: async (schemeId, loanAmount) => {
+    set({ simulationLoading: true })
+    try {
+      const result = await apiSimulateFinancials(schemeId, loanAmount)
+      set({ simulationResult: result, simulationLoading: false })
+      return result
+    } catch (err) {
+      console.error('Financial simulation failed:', err)
+      set({ simulationLoading: false })
+      return null
+    }
+  },
+
   // ── Reset Chat ──────────────────────────────────────────────────────────────
   resetChat: () =>
     set({
@@ -857,3 +938,4 @@ const useChatStore = create((set, get) => ({
 }))
 
 export default useChatStore
+

@@ -33,6 +33,8 @@ from app.engine.eligibility import check_all_schemes, select_next_question
 from app.engine.financial import generate_financial_summary
 
 
+from app.channels.schemas import IncomingMessage, OutgoingMessage
+
 async def get_or_create_session(session_id: Optional[str], language: str = "en") -> UserSession:
     """Retrieve existing session from repository or instantiate a new one."""
     if session_id:
@@ -46,14 +48,15 @@ async def get_or_create_session(session_id: Optional[str], language: str = "en")
     return session
 
 
-async def handle_chat_message(request: ChatRequest) -> ChatResponse:
+async def handle_chat_message(incoming: IncomingMessage) -> tuple[OutgoingMessage, ChatResponse]:
     """
     Core conversational turn handler.
     """
-    session = await get_or_create_session(request.session_id, request.language)
+    language = incoming.language or "en"
+    session = await get_or_create_session(incoming.session_id, language)
 
     # Step 1: Privacy Sanitization (two-pass: regex + DLP)
-    sanitized_context = await sanitize_text_pipeline(request.message)
+    sanitized_context = await sanitize_text_pipeline(incoming.text)
     sanitized_input = sanitized_context.sanitized_text
 
     # Store sanitized message in conversation history
@@ -61,7 +64,7 @@ async def handle_chat_message(request: ChatRequest) -> ChatResponse:
         ConversationMessage(
             role=ConversationRole.USER,
             content=sanitized_input,
-            language=request.language,
+            language=language,
         )
     )
 
@@ -69,7 +72,7 @@ async def handle_chat_message(request: ChatRequest) -> ChatResponse:
     extracted = await gemini_agent.extract_entities(
         sanitized_user_message=sanitized_input,
         conversation_history=session.conversation_history,
-        target_language=request.language,
+        target_language=language,
     )
 
     # Step 3: Update Profile
@@ -163,7 +166,7 @@ async def handle_chat_message(request: ChatRequest) -> ChatResponse:
         ConversationMessage(
             role=ConversationRole.ASSISTANT,
             content=response_text,
-            language=request.language,
+            language=language,
         )
     )
 
@@ -174,10 +177,10 @@ async def handle_chat_message(request: ChatRequest) -> ChatResponse:
         if v is not None and k not in ("language", "friendly_acknowledgment")
     }
 
-    return ChatResponse(
+    chat_response = ChatResponse(
         session_id=session.session_id,
         response_text=response_text,
-        language=request.language,
+        language=language,
         extracted_entities=extracted_dict,
         profile_completeness=profile.completeness(),
         extraction_mode=extracted.extraction_mode,
@@ -186,3 +189,12 @@ async def handle_chat_message(request: ChatRequest) -> ChatResponse:
         financial_summaries=financial_summaries,
         partner_list=partner_list,
     )
+    
+    outgoing = OutgoingMessage(
+        text=response_text,
+        language=language,
+        metadata={"chat_response": chat_response}
+    )
+
+    return outgoing, chat_response
+

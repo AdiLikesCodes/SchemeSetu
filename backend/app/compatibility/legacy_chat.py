@@ -10,6 +10,7 @@ from fastapi import APIRouter, Response
 from pydantic import BaseModel
 from app.models.contracts import ChatRequest
 from app.services.chat_service import chat_service
+from app.channels.web import web_adapter
 
 router = APIRouter(tags=["Legacy Compatibility"])
 
@@ -38,7 +39,8 @@ async def legacy_chat_adapter(
         language="en",
     )
 
-    chat_resp = await chat_service.process_chat_turn(modern_request)
+    incoming = await web_adapter.parse_event(modern_request)
+    _outgoing, chat_resp = await chat_service.process_chat_turn(incoming)
 
     # Convert to legacy response shape
     return {
@@ -50,3 +52,4 @@ async def legacy_chat_adapter(
             res.model_dump() for res in (chat_resp.eligibility_results or [])
         ],
     }
+
