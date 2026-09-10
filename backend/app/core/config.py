@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         description="Google AI Studio API key for Gemini",
     )
     GEMINI_MODEL: str = Field(
-        default="gemini-3.8-flash",
+        default="gemini-3.5-flash-lite",
         description="Gemini model identifier",
     )
     GEMINI_TEMPERATURE: float = Field(

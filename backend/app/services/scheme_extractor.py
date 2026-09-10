@@ -290,7 +290,7 @@ async def extract_scheme_data(
     try:
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
         response = await client.aio.models.generate_content(
-            model=settings.GEMINI_MODEL or "gemini-3.8-flash",
+            model=settings.GEMINI_MODEL or "gemini-3.5-flash-lite",
             contents=user_message,
             config=types.GenerateContentConfig(
                 system_instruction=EXTRACTION_SYSTEM_PROMPT,
