@@ -1,8 +1,35 @@
 # SchemeSetu (SIH PS 26092)
 
-> **Core Architectural Principle**: *AI understands the user; the deterministic engine makes the financial decision.*
+## 0. Product Definition — Freeze This First
 
-SchemeSetu is a production-structured platform designed to empower marginalized entrepreneurs (SC, ST, Safai Karamchari, OBC, Divyangjan) to discover eligible Ministry of Social Justice and Empowerment (MoSJE) schemes, understand financial requirements (subsidy, margin money, EMI), and connect with local channelizing partners (SCAs, Banks, CSCs).
+**Product goal**
+Build a multilingual, low-friction platform that helps marginalized entrepreneurs (SC, ST, Safai Karamchari, OBC, Divyangjan):
+- Understand their need
+- ↓
+- Build a profile conversationally
+- ↓
+- Find eligible government schemes
+- ↓
+- Understand why they qualify / fail
+- ↓
+- Calculate financial implications
+- ↓
+- Find an appropriate nearby partner
+- ↓
+- Take the next action
+
+**Core architectural principle**
+AI understands the user; the deterministic engine makes the decision. Gemini must never independently determine eligibility, subsidy, margin money, loan amount, or EMI.
+
+**Primary product actors**
+1. Beneficiary / Entrepreneur
+2. CSC Agent
+3. Channel Partner / SCA / Bank
+4. Administrator / Auditor
+
+**Product channels**
+- Current MVP: Web text interface
+- Later: WhatsApp, Voice, CSC assisted mode
 
 ---
 
@@ -40,7 +67,18 @@ User (Web Chat)
 3. **Workflow-Enforced Data Provenance**: Scheme numbers originate from official MoSJE/NSFDC/NSKFDC/NHFDC/NBCFDC gazettes and circulars (see full [Loan Schemes Ground-Truth Findings & Provenance Dossier](file:///home/alan/Work/tries/hack1/docs/LOAN_SCHEMES_FINDINGS.md) and offline artifacts in [`docs/provenance/`](file:///home/alan/Work/tries/hack1/docs/provenance/)). Unverified candidate schemes are kept in `status: draft` and excluded from matching.
 4. **Pre-LLM Privacy Shield**: Sanitized message context is stored in conversation history; raw PII never reaches Gemini.
 5. **Discriminator Next-Best-Question**: Instead of an arbitrary 30-field form, the system identifies which missing field narrows candidate schemes fastest.
-6. **Modern Stack**: Python 3.12, FastAPI, PyMongo Async (Motor replacement), Gemini 3.8 Flash, `uv` package manager with pinned Docker images, React + Vite + Tailwind CSS.
+6. **Modern Stack**: Python 3.12, FastAPI, Beanie ODM (Async MongoDB), Gemini 3.8 Flash, `uv` package manager, React + Vite + Vanilla CSS.
+
+---
+
+## Documentation
+
+Detailed phase deliverables, migration decisions, and architectural records can be found in the `docs/` directory:
+- [Current State Audit](docs/CURRENT_STATE.md)
+- [Migration Map](docs/MIGRATION.md)
+- [API Migration & Contract](docs/API_MIGRATION.md)
+- [AI Boundaries](docs/AI_BOUNDARY.md)
+- [Final Target Architecture](docs/ARCHITECTURE.md)
 
 ---
 
@@ -63,10 +101,4 @@ uv run uvicorn app.main:app --reload --port 8000
 cd frontend
 npm install
 npm run dev
-```
-
-### Docker Compose
-
-```bash
-docker compose up --build
 ```
